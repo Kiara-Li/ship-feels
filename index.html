@@ -20,7 +20,7 @@
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <button type="button" class="top-bar__title" id="cp-title-btn" aria-label="编辑 CP 名称"></button>
+        <button type="button" class="top-bar__title" id="cp-title-btn" aria-label="编辑 CP 名称">CP Name</button>
         <input type="text" class="top-bar__title-input" id="cp-title-input" hidden />
         <button type="button" class="icon-btn" id="btn-more" aria-label="更多">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -31,15 +31,17 @@
         </button>
       </header>
 
-      <main class="feed" id="feed" aria-label="嗑点列表"></main>
+      <div id="home-view">
+        <main class="feed" id="feed" aria-label="嗑点列表"></main>
+      </div>
 
       <nav class="bottom-nav" aria-label="主导航">
-        <div class="bottom-nav__item bottom-nav__item--active">
+        <button type="button" class="bottom-nav__item bottom-nav__item--active" id="btn-home">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" />
           </svg>
           <span data-i18n="home">主页</span>
-        </div>
+        </button>
         <button type="button" class="bottom-nav__item" id="btn-search">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="7" />
@@ -64,6 +66,107 @@
         </svg>
       </button>
 
+      <!-- Search Page Overlay -->
+      <div class="page-overlay page-overlay--search" id="search-overlay" hidden aria-hidden="true">
+        <header class="page-header">
+          <button type="button" class="page-header__close" id="btn-close-search" aria-label="关闭搜索">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+          <h1 class="page-header__title" id="search-page-title">搜索嗑点</h1>
+          <div class="page-header__right-spacer"></div>
+        </header>
+
+        <main class="search-main">
+          <div class="search-main__section">
+            <input
+              type="text"
+              class="search-input"
+              id="search-input"
+              placeholder="可以同时搜索多个tag，例如 ##同事####劲敌##"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="search-main__section">
+            <h2 class="search-section-title" id="search-all-tags-title">所有标签</h2>
+            <div id="tag-index-list" class="pill-list"></div>
+          </div>
+
+          <div class="search-main__section" id="search-results-wrap" hidden>
+            <h2 class="search-section-title" id="search-results-title"></h2>
+            <div id="search-results-list" class="card-stack"></div>
+          </div>
+        </main>
+
+        <!-- Tag Detail Slide-Up -->
+        <div class="tag-detail-overlay" id="tag-detail-overlay" hidden aria-hidden="true">
+          <button type="button" class="tag-detail-backdrop" id="tag-detail-backdrop" aria-label="关闭"></button>
+
+          <div class="tag-detail-sheet" id="tag-detail-sheet" role="dialog" aria-modal="true">
+            <div class="tag-detail-header">
+              <h2 class="tag-detail-title" id="tag-detail-title">#tag</h2>
+              <button type="button" class="btn-primary tag-detail-done" id="tag-detail-done">完成</button>
+            </div>
+            <div class="tag-detail-body" id="tag-detail-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Folder List Overlay -->
+      <div class="page-overlay page-overlay--folders" id="folderList-overlay" hidden aria-hidden="true">
+        <header class="page-header">
+          <div class="page-header__left-spacer"></div>
+          <h1 class="page-header__title" id="folder-list-page-title">清单</h1>
+          <button type="button" class="page-header__text-btn" id="btn-close-folderList">
+            取消
+          </button>
+        </header>
+        <main class="folders-main">
+          <div id="folders-list" class="folders-list"></div>
+          <button type="button" class="folder-create" id="btn-create-folder">
+            <span class="folder-create__icon" aria-hidden="true">+</span>
+            新建清单
+          </button>
+        </main>
+      </div>
+
+      <!-- Folder Detail Overlay -->
+      <div class="page-overlay page-overlay--folder-detail" id="folderDetail-overlay" hidden aria-hidden="true">
+        <header class="page-header">
+          <div class="page-header__left-spacer"></div>
+          <h1 class="page-header__title" id="folder-detail-title">清单</h1>
+          <button type="button" class="btn-primary folder-detail-done" id="folder-detail-done">
+            完成
+          </button>
+        </header>
+        <main class="folder-detail-main">
+          <div class="folder-detail-annotation">
+            <textarea
+              id="folder-annotation"
+              class="folder-annotation-input"
+              placeholder="在这里添加备注..."
+            ></textarea>
+          </div>
+          <div id="folder-detail-cards" class="card-stack"></div>
+        </main>
+      </div>
+
+      <!-- 选择清单（箭头添加） -->
+      <div class="overlay overlay--settings" id="folder-picker-overlay" aria-hidden="true">
+        <button type="button" class="overlay__backdrop" id="folder-picker-backdrop" aria-label="关闭"></button>
+        <div class="sheet sheet--settings folder-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="folder-picker-heading">
+          <div class="sheet__title-row">
+            <h2 class="sheet__title" id="folder-picker-heading">添加到清单</h2>
+          </div>
+          <div id="folder-picker-list" class="folder-picker-list"></div>
+          <button type="button" class="folder-picker-cancel" id="folder-picker-cancel">取消</button>
+        </div>
+      </div>
+
+      <input type="file" id="editor-file-input" accept="image/*" multiple hidden />
+
       <!-- 编辑抽屉 -->
       <div class="overlay" id="editor-overlay" aria-hidden="true">
         <button type="button" class="overlay__backdrop" id="editor-backdrop" aria-label="关闭"></button>
@@ -71,7 +174,7 @@
           <div class="sheet__header">
             <span id="editor-heading" class="visually-hidden">编辑嗑点</span>
             <button type="button" class="sheet__mode" id="editor-mode-btn">
-              <span data-i18n="editorModeImageText">图文</span>
+              <span>图文</span>
               <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="m6 9 6 6 6-6" />
               </svg>
@@ -100,7 +203,7 @@
 
             <div class="editor-block">
               <div class="field field--quote">
-                <input type="text" id="editor-quote" data-i18n-placeholder="quotePlaceholder" placeholder="在这里输入台词" />
+                <input type="text" id="editor-quote" data-i18n-placeholder="quotePh" placeholder="在这里输入台词" />
               </div>
               <p class="field-label" data-i18n="quoteFrom">这句话来自——</p>
               <div class="char-row">
@@ -118,7 +221,7 @@
                   id="editor-body"
                   class="textarea-shell__input"
                   rows="6"
-                  data-i18n-placeholder="writePlaceholder"
+                  data-i18n-placeholder="writePh"
                   placeholder="开始自由书写...使用 #标签# 来标记关键词"
                 ></textarea>
               </div>
@@ -138,11 +241,35 @@
           <div class="settings-body">
             <p class="settings-label" data-i18n="language">语言</p>
             <div class="lang-toggle" role="group" aria-label="语言">
-              <button type="button" class="lang-toggle__btn is-active" data-locale="zh" data-i18n="languageZh">
+              <button type="button" class="lang-toggle__btn is-active" data-locale="zh" data-i18n="langZh">
                 中文
               </button>
-              <button type="button" class="lang-toggle__btn" data-locale="en" data-i18n="languageEn">English</button>
+              <button type="button" class="lang-toggle__btn" data-locale="en" data-i18n="langEn">English</button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 模版选择（与 src2 一致） -->
+      <div class="overlay overlay--settings" id="template-overlay" aria-hidden="true">
+        <button type="button" class="overlay__backdrop" id="template-backdrop" aria-label="关闭"></button>
+        <div class="sheet sheet--settings" role="dialog" aria-modal="true" aria-labelledby="template-heading">
+          <div class="sheet__title-row">
+            <h2 class="sheet__title" id="template-heading" data-i18n="templateTitle">模版样式</h2>
+          </div>
+          <div class="settings-body template-modal-body">
+            <button type="button" class="folder-item-btn template-pick" data-template="图文">
+              <div class="folder-item-btn__name">图文</div>
+              <div class="folder-item-btn__meta">推荐原著为动漫 / 影视作品</div>
+            </button>
+            <button type="button" class="folder-item-btn template-pick" data-template="文">
+              <div class="folder-item-btn__name">文</div>
+              <div class="folder-item-btn__meta">推荐原著为小说</div>
+            </button>
+            <button type="button" class="folder-item-btn template-pick" data-template="图">
+              <div class="folder-item-btn__name">图</div>
+              <div class="folder-item-btn__meta">推荐原著为漫画</div>
+            </button>
           </div>
         </div>
       </div>
