@@ -66,6 +66,24 @@
         </svg>
       </button>
 
+      <div class="overlay overlay--sort" id="sort-overlay" aria-hidden="true">
+        <button type="button" class="overlay__backdrop" id="sort-backdrop" aria-label="关闭"></button>
+        <div class="sort-modal" role="dialog" aria-modal="true" aria-labelledby="sort-modal-title">
+          <h2 class="sort-modal__title" id="sort-modal-title" data-i18n="sortModalTitle">排序方式</h2>
+          <div class="sort-modal__list">
+            <button type="button" class="sort-modal__opt" data-sort-opt="real" data-i18n="sortRealTime">
+              现实编辑时间
+            </button>
+            <button type="button" class="sort-modal__opt" data-sort-opt="story" data-i18n="sortStory">
+              原著时间线
+            </button>
+            <button type="button" class="sort-modal__opt" data-sort-opt="custom" data-i18n="sortCustom">
+              自定义
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Search Page Overlay -->
       <div class="page-overlay page-overlay--search" id="search-overlay" hidden aria-hidden="true">
         <header class="page-header">
@@ -134,23 +152,66 @@
 
       <!-- Folder Detail Overlay -->
       <div class="page-overlay page-overlay--folder-detail" id="folderDetail-overlay" hidden aria-hidden="true">
-        <header class="page-header">
+        <header class="page-header folder-detail-header-normal" id="folder-header-normal">
           <div class="page-header__left-spacer"></div>
           <h1 class="page-header__title" id="folder-detail-title">清单</h1>
-          <button type="button" class="btn-primary folder-detail-done" id="folder-detail-done">
-            完成
+          <div class="folder-detail-header-actions">
+            <button type="button" class="page-header__text-btn folder-export-enter" id="folder-export-enter" data-i18n="folderExport">
+              导出
+            </button>
+            <button type="button" class="btn-primary folder-detail-done" id="folder-detail-done" data-i18n="folderDone">
+              完成
+            </button>
+          </div>
+        </header>
+        <header class="page-header folder-detail-header-export" id="folder-header-export" aria-hidden="true">
+          <button type="button" class="page-header__close" id="folder-export-exit">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
           </button>
+          <div class="page-header__title folder-detail-header-export__spacer" aria-hidden="true"></div>
+          <button type="button" class="btn-primary" id="folder-export-share" data-i18n="folderShare">分享</button>
         </header>
         <main class="folder-detail-main">
-          <div class="folder-detail-annotation">
-            <textarea
-              id="folder-annotation"
-              class="folder-annotation-input"
-              placeholder="在这里添加备注..."
-            ></textarea>
+          <div id="folder-export-capture" class="folder-export-capture">
+            <div class="folder-export-emoji-bg" id="folder-export-emoji-bg" aria-hidden="true"></div>
+            <div class="folder-export-capture-inner">
+              <h2 class="folder-export-heading" id="folder-export-heading" hidden></h2>
+              <p class="folder-export-annotation" id="folder-export-annotation" hidden></p>
+              <div class="folder-detail-topnote">
+                <label class="folder-note-label" for="folder-annotation">🌸 我还有想说的：</label>
+                <textarea
+                  id="folder-annotation"
+                  class="folder-note-input"
+                  placeholder="写点什么…"
+                  rows="2"
+                ></textarea>
+              </div>
+              <div id="folder-detail-cards" class="card-stack"></div>
+            </div>
           </div>
-          <div id="folder-detail-cards" class="card-stack"></div>
         </main>
+        <button type="button" class="folder-export-emoji-fab" id="folder-export-emoji-fab">
+          🌸
+        </button>
+        <div class="folder-emoji-sheet" id="folder-emoji-sheet" hidden aria-hidden="true">
+          <button type="button" class="folder-emoji-sheet__backdrop" id="folder-emoji-sheet-backdrop" aria-label="关闭"></button>
+          <div class="folder-emoji-sheet__panel" role="dialog" aria-label="选择背景图案">
+            <div class="folder-emoji-grid" id="folder-emoji-grid">
+              <button type="button" class="folder-emoji-cell" data-emoji="💗">💗</button>
+              <button type="button" class="folder-emoji-cell" data-emoji="✨">✨</button>
+              <button type="button" class="folder-emoji-cell" data-emoji="🥺">🥺</button>
+              <button type="button" class="folder-emoji-cell" data-emoji="🌸">🌸</button>
+              <button type="button" class="folder-emoji-cell" data-emoji="🧸">🧸</button>
+              <button type="button" class="folder-emoji-cell" data-emoji="🌙">🌙</button>
+              <button type="button" class="folder-emoji-cell" data-emoji="🔥">🔥</button>
+              <button type="button" class="folder-emoji-cell" data-emoji="🌧️">🌧️</button>
+              <button type="button" class="folder-emoji-cell" data-emoji="🍓">🍓</button>
+              <button type="button" class="folder-emoji-cell" data-emoji="🫧">🫧</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 选择清单（箭头添加） -->
@@ -183,6 +244,26 @@
           </div>
           <div class="sheet__body">
             <div class="editor-block">
+              <div class="editor-story-row">
+                <input
+                  type="text"
+                  id="editor-episode"
+                  class="editor-story-input editor-story-input--episode"
+                  data-i18n-placeholder="storyEpisodePh"
+                  placeholder="第1季 第1集 or S1E1"
+                  autocomplete="off"
+                />
+                <input
+                  type="text"
+                  id="editor-timecode"
+                  class="editor-story-input editor-story-input--time"
+                  data-i18n-placeholder="storyTimePh"
+                  placeholder="12:34"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+            <div class="editor-block">
               <button type="button" class="editor-add-row" id="editor-add-image">
                 <span class="editor-add-row__left">
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
@@ -198,6 +279,10 @@
                   </svg>
                 </span>
               </button>
+              <div class="image-type-panel" id="image-type-panel" hidden>
+                <button type="button" class="image-type-btn" data-image-type="full">全屏</button>
+                <button type="button" class="image-type-btn" data-image-type="subtitle">字幕</button>
+              </div>
               <div class="editor-image-slots" id="editor-image-slots" hidden></div>
             </div>
 
@@ -275,6 +360,7 @@
       </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

@@ -43,6 +43,16 @@
       newFolderName: '新清单',
       cpDefault: 'CP Name',
       delete: '删除',
+      folderExport: '导出',
+      folderShare: '分享',
+      storyEpisodePh: '第1季 第1集 or S1E1',
+      storyTimePh: '12:34',
+      sortModalTitle: '排序方式',
+      sortRealTime: '现实编辑时间',
+      sortStory: '原著时间线',
+      sortCustom: '自定义',
+      closeOverlay: '关闭',
+      folderEmojiBg: '背景图案',
     },
     en: {
       home: 'Home',
@@ -83,6 +93,11 @@
       newFolderName: 'List',
       cpDefault: 'CP Name',
       delete: 'Delete',
+      folderExport: 'Export',
+      folderShare: 'Share',
+      storyEpisodePh: 'S1E1 or season / episode',
+      storyTimePh: '12:34',
+      folderEmojiBg: 'Background pattern',
     },
   };
 
@@ -146,9 +161,14 @@
     draggedCardId: null,
     selectedTemplate: '图文',
     editorImages: [],
+    pendingImageType: 'full',
     selectedChar: null,
     pendingCardIdForPicker: null,
     editingCardId: null,
+    isExportMode: false,
+    selectedEmoji: '💗',
+    feedSortStory: false,
+    storySortAsc: true,
   };
 
   function $(id) {
@@ -219,6 +239,14 @@
     }
     var fab = $('fab-open-editor');
     if (fab) fab.setAttribute('aria-label', t('fabAria'));
+    var sb = $('sort-backdrop');
+    if (sb) sb.setAttribute('aria-label', t('closeOverlay'));
+    var fx = $('folder-export-exit');
+    if (fx) fx.setAttribute('aria-label', t('closeOverlay'));
+    var feb = $('folder-export-emoji-fab');
+    if (feb) feb.setAttribute('aria-label', t('folderEmojiBg'));
+    var febd = $('folder-emoji-sheet-backdrop');
+    if (febd) febd.setAttribute('aria-label', t('closeOverlay'));
   }
 
   function loadState() {
@@ -355,12 +383,21 @@
 
   var ARROW_SVG =
     '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+  var CLOSE_SVG =
+    '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>';
   var GRIP_SVG =
     '<svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.25"/><circle cx="15" cy="6" r="1.25"/><circle cx="9" cy="12" r="1.25"/><circle cx="15" cy="12" r="1.25"/><circle cx="9" cy="18" r="1.25"/><circle cx="15" cy="18" r="1.25"/></svg>';
 
-  function cardShellTall(card, innerTopRight, extraClass) {
+  function cardShellTall(card, innerTopRight, extraClass, folderBodySnippet) {
     var ec = extraClass ? ' ' + extraClass : '';
     var ariaDel = escapeHtml(t('delete'));
+    var snippet = '';
+    if (folderBodySnippet) {
+      var bt = (card.text || '').trim();
+      if (bt) {
+        snippet = '<p class="card__body-snippet">' + escapeHtml(bt) + '</p>';
+      }
+    }
     return (
       '<article class="card card--tall' +
       ec +
@@ -372,24 +409,115 @@
       escapeHtml(card.id) +
       '" aria-label="' +
       ariaDel +
-      '">×</button>' +
+      '">' +
+      CLOSE_SVG +
+      '</button>' +
       '<div class="card__image card__image--photo"><img src="' +
       escapeHtml(card.image) +
-      '" alt="" loading="lazy"/></div>' +
+      '" alt="" loading="lazy" draggable="false"/></div>' +
       '<div class="card__body">' +
       '<p class="card__quote"><span class="q" aria-hidden="true">“</span>' +
       escapeHtml(card.quote) +
       '<span class="q" aria-hidden="true">”</span></p>' +
+      snippet +
       '<div class="card__tags">' +
       tagsHtml(card.tags) +
       '</div></div></article>'
     );
   }
 
+  function getFeedCardsOrdered() {
+    var cards = state.cards;
+    if (!state.feedSortStory) return cards.slice();
+    var withIdx = cards.map(function (c, i) {
+      return { c: c, i: i };
+    });
+    function hasStory(c) {
+      var e = (c.episode || '').trim();
+      var t = (c.timecode || '').trim();
+      return e !== '' || t !== '';
+    }
+    function storyKey(c) {
+      return [(c.episode || '').trim(), (c.timecode || '').trim()].join('\0');
+    }
+    var sortable = withIdx.filter(function (x) {
+      return hasStory(x.c);
+    });
+    var unsort = withIdx.filter(function (x) {
+      return !hasStory(x.c);
+    });
+    sortable.sort(function (a, b) {
+      var cmp = storyKey(a.c).localeCompare(storyKey(b.c), undefined, { numeric: true });
+      if (cmp !== 0) return state.storySortAsc ? cmp : -cmp;
+      return a.i - b.i;
+    });
+    unsort.sort(function (a, b) {
+      return a.i - b.i;
+    });
+    return sortable.concat(unsort).map(function (x) {
+      return x.c;
+    });
+  }
+
+  function wrapFeedCardHtml(card, arrowBtn) {
+    var inner = cardShellTall(card, arrowBtn, '');
+    var story = '';
+    if (state.feedSortStory) {
+      var ep = (card.episode || '').trim();
+      var tc = (card.timecode || '').trim();
+      if (ep || tc) {
+        story =
+          '<div class="editor-story-row editor-story-row--feed">' +
+          '<span class="editor-story-feed-cell">' +
+          (ep ? escapeHtml(ep) : '&nbsp;') +
+          '</span>' +
+          '<span class="editor-story-feed-cell editor-story-feed-cell--time">' +
+          (tc ? escapeHtml(tc) : '&nbsp;') +
+          '</span>' +
+          '</div>';
+      }
+    }
+    return '<div class="feed-card-wrap">' + inner + story + '</div>';
+  }
+
+  function setSortModalOpen(open) {
+    if (!dom.sortOverlay) return;
+    dom.sortOverlay.classList.toggle('is-open', open);
+    dom.sortOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (open) syncSortModalActive();
+  }
+
+  function syncSortModalActive() {
+    document.querySelectorAll('[data-sort-opt]').forEach(function (btn) {
+      var k = btn.getAttribute('data-sort-opt');
+      btn.classList.toggle('is-active', k === 'story' && state.feedSortStory);
+    });
+  }
+
+  function handleSortOption(kind) {
+    if (kind === 'real' || kind === 'custom') {
+      state.feedSortStory = false;
+      setSortModalOpen(false);
+      renderFeed();
+      return;
+    }
+    if (kind === 'story') {
+      if (!state.feedSortStory) {
+        state.feedSortStory = true;
+        state.storySortAsc = true;
+      } else {
+        state.storySortAsc = !state.storySortAsc;
+      }
+      setSortModalOpen(false);
+      renderFeed();
+    }
+  }
+
   function renderFeed() {
     if (!dom.feed) return;
     var ariaPick = escapeHtml(t('pickFolder'));
-    dom.feed.innerHTML = state.cards
+    var cards = getFeedCardsOrdered();
+    dom.feed.innerHTML = cards
       .map(function (card) {
         var btn =
           '<button type="button" class="card-arrow-btn" aria-label="' +
@@ -397,7 +525,7 @@
           '">' +
           ARROW_SVG +
           '</button>';
-        return cardShellTall(card, btn, '');
+        return wrapFeedCardHtml(card, btn);
       })
       .join('');
   }
@@ -485,20 +613,116 @@
       .join('');
   }
 
+  function syncExportEmojiBg() {
+    var el = $('folder-export-emoji-bg');
+    if (!el) return;
+    var ch = state.selectedEmoji || '💗';
+    el.innerHTML = '';
+    var n = 56;
+    for (var i = 0; i < n; i++) {
+      var span = document.createElement('span');
+      span.className = 'folder-export-emoji-sprinkle';
+      span.textContent = ch;
+      span.style.left = 2 + Math.random() * 96 + '%';
+      span.style.top = 1 + Math.random() * 98 + '%';
+      span.style.fontSize = 0.72 + Math.random() * 1.5 + 'rem';
+      span.style.opacity = String(0.04 + Math.random() * 0.08);
+      span.style.transform =
+        'translate(-50%, -50%) rotate(' + ((Math.random() - 0.5) * 72 | 0) + 'deg)';
+      el.appendChild(span);
+    }
+  }
+
+  function setFolderEmojiSheetOpen(open) {
+    var sh = $('folder-emoji-sheet');
+    if (!sh) return;
+    sh.hidden = !open;
+    sh.setAttribute('aria-hidden', open ? 'false' : 'true');
+  }
+
+  function syncFolderExportStatic() {
+    var folder = getSelectedFolder();
+    var h = $('folder-export-heading');
+    var p = $('folder-export-annotation');
+    if (!folder || !h || !p) return;
+    h.textContent = folder.name;
+    h.hidden = false;
+    var txt = (dom.folderAnnotation && dom.folderAnnotation.value) || '';
+    p.textContent = txt;
+    p.hidden = !txt.trim();
+  }
+
+  function setFolderExportMode(on) {
+    state.isExportMode = !!on;
+    document.body.classList.toggle('export-mode', state.isExportMode);
+    var hex = $('folder-header-export');
+    if (hex) hex.setAttribute('aria-hidden', state.isExportMode ? 'false' : 'true');
+    if (!state.isExportMode) {
+      setFolderEmojiSheetOpen(false);
+      var h = $('folder-export-heading');
+      var p = $('folder-export-annotation');
+      if (h) h.hidden = true;
+      if (p) p.hidden = true;
+      makeFolderCardsDraggable();
+      return;
+    }
+    syncExportEmojiBg();
+    syncFolderExportStatic();
+    if (dom.folderDetailCards) {
+      dom.folderDetailCards.querySelectorAll('.folder-draggable-card').forEach(function (el) {
+        el.setAttribute('draggable', 'false');
+      });
+    }
+  }
+
+  function runFolderExportImage() {
+    var el = $('folder-export-capture');
+    if (!el || typeof html2canvas !== 'function') return;
+    syncFolderExportStatic();
+    syncExportEmojiBg();
+    html2canvas(el, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' }).then(function (canvas) {
+      var a = document.createElement('a');
+      var folder = getSelectedFolder();
+      var base =
+        folder && folder.name
+          ? String(folder.name)
+              .replace(/[\\/:*?"<>|]+/g, '_')
+              .trim()
+              .slice(0, 48) || 'folder'
+          : 'folder';
+      a.download = base + '.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+  }
+
   function renderFolderDetail() {
     var folder = getSelectedFolder();
     if (!folder) return;
     if (dom.folderDetailTitle) dom.folderDetailTitle.textContent = folder.name;
     if (dom.folderAnnotation) dom.folderAnnotation.value = folder.annotation || '';
     if (!dom.folderDetailCards) return;
+    var ariaPick = escapeHtml(t('pickFolder'));
+    var arrowBtn =
+      '<button type="button" class="card-arrow-btn" aria-label="' +
+      ariaPick +
+      '">' +
+      ARROW_SVG +
+      '</button>';
     var cards = getCardsByIds(folder.cardIds);
     dom.folderDetailCards.innerHTML = cards
       .map(function (card) {
         var grip = '<div class="folder-card-grip" aria-hidden="true">' + GRIP_SVG + '</div>';
-        return cardShellTall(card, grip, ' folder-draggable-card');
+        return cardShellTall(card, grip + arrowBtn, ' folder-draggable-card', true);
       })
       .join('');
     makeFolderCardsDraggable();
+    if (state.isExportMode && dom.folderDetailCards) {
+      dom.folderDetailCards.querySelectorAll('.folder-draggable-card').forEach(function (el) {
+        el.setAttribute('draggable', 'false');
+      });
+      syncFolderExportStatic();
+    }
   }
 
   function renderFolderPicker() {
@@ -731,6 +955,7 @@
   }
 
   function openFolderDetail(folderId) {
+    setFolderExportMode(false);
     state.selectedFolderId = folderId;
     if (dom.folderDetailOverlay) {
       dom.folderDetailOverlay.hidden = false;
@@ -740,6 +965,7 @@
   }
 
   function closeFolderDetail() {
+    setFolderExportMode(false);
     state.selectedFolderId = null;
     if (dom.folderDetailOverlay) {
       dom.folderDetailOverlay.hidden = true;
@@ -766,14 +992,18 @@
     if (!dom.editorOverlay) return;
     dom.editorOverlay.classList.toggle('is-open', open);
     dom.editorOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (!open && dom.imageTypePanel) dom.imageTypePanel.hidden = true;
     if (open && dom.editorQuote) dom.editorQuote.focus();
   }
 
   function resetEditorDraft() {
     state.editingCardId = null;
     state.editorImages = [];
+    state.pendingImageType = 'full';
     if (dom.editorQuote) dom.editorQuote.value = '';
     if (dom.editorBody) dom.editorBody.value = '';
+    if (dom.editorEpisode) dom.editorEpisode.value = '';
+    if (dom.editorTimecode) dom.editorTimecode.value = '';
     state.selectedChar = null;
     document.querySelectorAll('.char-btn').forEach(function (b) {
       b.classList.remove('is-selected');
@@ -787,10 +1017,20 @@
     var card = getCardById(cardId);
     if (!card || !dom.editorQuote || !dom.editorBody) return;
     state.editingCardId = card.id;
-    state.editorImages = card.image ? [card.image] : [];
+    state.editorImages = (card.images && card.images.length
+      ? card.images
+      : card.image
+      ? [{ src: card.image, type: card.imageRatio === 'subtitle' ? 'subtitle' : 'full' }]
+      : []
+    ).map(function (img) {
+      if (typeof img === 'string') return { src: img, type: 'full' };
+      return { src: img.src, type: img.type === 'subtitle' ? 'subtitle' : 'full' };
+    });
     dom.editorQuote.value = card.quote || '';
     dom.editorBody.value =
       card.text || ((card.tags || []).map(function (tg) { return '#' + tg + '#'; }).join(' '));
+    if (dom.editorEpisode) dom.editorEpisode.value = card.episode || '';
+    if (dom.editorTimecode) dom.editorTimecode.value = card.timecode || '';
     renderEditorImages();
     syncEditor();
     resizeEditorTextarea();
@@ -871,9 +1111,14 @@
     }
     dom.editorImageSlots.hidden = false;
     dom.editorImageSlots.innerHTML = state.editorImages
-      .map(function (src, i) {
+      .map(function (item, i) {
+        var src = typeof item === 'string' ? item : item.src;
+        var type = typeof item === 'string' ? 'full' : item.type;
+        var ratioClass = type === 'subtitle' ? 'ratio-subtitle' : 'ratio-default';
         return (
-          '<div class="editor-image-slot">' +
+          '<div class="editor-image-slot ' +
+          ratioClass +
+          '">' +
           '<img class="editor-slot-img" src="' +
           escapeHtml(src) +
           '" alt=""/>' +
@@ -895,11 +1140,21 @@
     if (!quotation && !body) return;
 
     var tags = extractTags(body);
+    var ep = dom.editorEpisode ? dom.editorEpisode.value.trim() : '';
+    var tc = dom.editorTimecode ? dom.editorTimecode.value.trim() : '';
     var payload = {
-      image: state.editorImages[0] || PLACEHOLDER_IMAGES[0],
+      image:
+        (state.editorImages[0] && (state.editorImages[0].src || state.editorImages[0])) ||
+        PLACEHOLDER_IMAGES[0],
+      images: state.editorImages.map(function (it) {
+        if (typeof it === 'string') return { src: it, type: 'full' };
+        return { src: it.src, type: it.type === 'subtitle' ? 'subtitle' : 'full' };
+      }),
       quote: quotation || body.substring(0, 50),
       tags: tags,
       text: body,
+      episode: ep,
+      timecode: tc,
     };
     if (state.editingCardId == null) {
       state.cards.unshift(
@@ -1030,6 +1285,21 @@
   }
 
   function bindOverlays() {
+    if ($('btn-more'))
+      $('btn-more').addEventListener('click', function () {
+        setSortModalOpen(true);
+      });
+    if (dom.sortBackdrop)
+      dom.sortBackdrop.addEventListener('click', function () {
+        setSortModalOpen(false);
+      });
+    if (dom.sortOverlay)
+      dom.sortOverlay.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-sort-opt]');
+        if (!b || !dom.sortOverlay.contains(b)) return;
+        e.preventDefault();
+        handleSortOption(b.getAttribute('data-sort-opt'));
+      });
     if ($('btn-menu'))
       $('btn-menu').addEventListener('click', function () {
         openFolderList();
@@ -1041,6 +1311,37 @@
     if ($('btn-close-folderList'))
       $('btn-close-folderList').addEventListener('click', function () {
         closeFolderList();
+      });
+    if ($('folder-export-enter'))
+      $('folder-export-enter').addEventListener('click', function () {
+        setFolderExportMode(true);
+      });
+    if ($('folder-export-exit'))
+      $('folder-export-exit').addEventListener('click', function () {
+        setFolderExportMode(false);
+      });
+    if ($('folder-export-share'))
+      $('folder-export-share').addEventListener('click', function () {
+        runFolderExportImage();
+      });
+    if ($('folder-export-emoji-fab'))
+      $('folder-export-emoji-fab').addEventListener('click', function () {
+        setFolderEmojiSheetOpen(true);
+      });
+    if ($('folder-emoji-sheet-backdrop'))
+      $('folder-emoji-sheet-backdrop').addEventListener('click', function () {
+        setFolderEmojiSheetOpen(false);
+      });
+    var feg = $('folder-emoji-grid');
+    if (feg)
+      feg.addEventListener('click', function (e) {
+        var b = e.target.closest('.folder-emoji-cell');
+        if (!b || !feg.contains(b)) return;
+        var em = b.getAttribute('data-emoji');
+        if (!em) return;
+        state.selectedEmoji = em;
+        syncExportEmojiBg();
+        setFolderEmojiSheetOpen(false);
       });
     if ($('folder-detail-done'))
       $('folder-detail-done').addEventListener('click', function () {
@@ -1064,7 +1365,7 @@
       $('editor-done').addEventListener('click', handleEditorComplete);
     if ($('editor-add-image'))
       $('editor-add-image').addEventListener('click', function () {
-        if (dom.fileInput) dom.fileInput.click();
+        if (dom.imageTypePanel) dom.imageTypePanel.hidden = !dom.imageTypePanel.hidden;
       });
     if ($('editor-mode-btn'))
       $('editor-mode-btn').addEventListener('click', function () {
@@ -1159,24 +1460,44 @@
       }
     });
     dom.folderDetailCards.addEventListener('dragover', function (e) {
-      var wrap = e.target.closest('.folder-draggable-card');
-      if (wrap) e.preventDefault();
+      if (state.draggedCardId == null) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
     });
     dom.folderDetailCards.addEventListener('drop', function (e) {
-      var wrap = e.target.closest('.folder-draggable-card');
-      if (!wrap || state.draggedCardId == null) return;
+      if (state.draggedCardId == null) return;
       e.preventDefault();
-      var targetId = parseInt(wrap.getAttribute('data-card-id'), 10);
       var folder = getSelectedFolder();
-      if (!folder || isNaN(targetId)) return;
+      if (!folder) {
+        state.draggedCardId = null;
+        return;
+      }
       var draggedId = state.draggedCardId;
-      if (draggedId === targetId) return;
       var order = folder.cardIds.slice();
       var di = order.indexOf(draggedId);
-      var ti = order.indexOf(targetId);
-      if (di === -1 || ti === -1) return;
-      order.splice(di, 1);
-      order.splice(ti, 0, draggedId);
+      if (di === -1) {
+        state.draggedCardId = null;
+        return;
+      }
+      var wrap = e.target.closest('.folder-draggable-card');
+      if (wrap) {
+        var targetId = parseInt(wrap.getAttribute('data-card-id'), 10);
+        if (isNaN(targetId) || draggedId === targetId) {
+          state.draggedCardId = null;
+          return;
+        }
+        var ti = order.indexOf(targetId);
+        if (ti === -1) {
+          state.draggedCardId = null;
+          return;
+        }
+        order.splice(di, 1);
+        if (di < ti) ti -= 1;
+        order.splice(ti, 0, draggedId);
+      } else {
+        order.splice(di, 1);
+        order.push(draggedId);
+      }
       reorderCardsInFolder(folder.id, order);
       state.draggedCardId = null;
     });
@@ -1186,6 +1507,19 @@
   }
 
   function bindEditor() {
+    document.querySelectorAll('.image-type-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.pendingImageType = btn.getAttribute('data-image-type') || 'full';
+        if (dom.imageTypePanel) dom.imageTypePanel.hidden = true;
+        if (dom.fileInput) dom.fileInput.click();
+      });
+    });
+    document.addEventListener('click', function (e) {
+      if (!dom.imageTypePanel || dom.imageTypePanel.hidden) return;
+      if (e.target.closest('#editor-add-image') || e.target.closest('#image-type-panel')) return;
+      dom.imageTypePanel.hidden = true;
+    });
+
     document.querySelectorAll('.char-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var ch = btn.getAttribute('data-char');
@@ -1227,7 +1561,7 @@
           (function (file) {
             var r = new FileReader();
             r.onload = function () {
-              state.editorImages.push(r.result);
+              state.editorImages.push({ src: r.result, type: state.pendingImageType });
               done++;
               if (done >= n) renderEditorImages();
             };
@@ -1295,12 +1629,17 @@
     dom.folderDetailTitle = $('folder-detail-title');
     dom.folderAnnotation = $('folder-annotation');
     dom.folderDetailCards = $('folder-detail-cards');
+    dom.sortOverlay = $('sort-overlay');
+    dom.sortBackdrop = $('sort-backdrop');
     dom.editorOverlay = $('editor-overlay');
+    dom.editorEpisode = $('editor-episode');
+    dom.editorTimecode = $('editor-timecode');
     dom.editorQuote = $('editor-quote');
     dom.editorBody = $('editor-body');
     dom.editorHighlight = $('editor-highlight');
     dom.editorTagPreview = $('editor-tag-preview');
     dom.editorImageSlots = $('editor-image-slots');
+    dom.imageTypePanel = $('image-type-panel');
     dom.editorModeBtn = $('editor-mode-btn');
     dom.settingsOverlay = $('settings-overlay');
     dom.templateOverlay = $('template-overlay');
