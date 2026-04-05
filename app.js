@@ -57,6 +57,12 @@
       imageTypeFull: '全屏',
       imageTypeSubtitle: '字幕',
       demoCardHint: '示范 · 可删',
+      exportReadyTitle: '导出完成',
+      exportShareBtn: '分享到…',
+      exportDownloadBtn: '下载文件',
+      exportLongPressHint: '也可长按上方图片保存到相册。',
+      exportPdfHint: '点「下载文件」保存 PDF；支持的话可用「分享到…」发到微信等。',
+      exportClose: '关闭',
       rosterSecFriends: '朋友',
       rosterSecOthers: '其他',
       delete: '删除',
@@ -145,6 +151,12 @@
       imageTypeFull: 'Full bleed',
       imageTypeSubtitle: 'Subtitles',
       demoCardHint: 'Demo · delete anytime',
+      exportReadyTitle: 'Ready to save',
+      exportShareBtn: 'Share…',
+      exportDownloadBtn: 'Download',
+      exportLongPressHint: 'Or long-press the image above to save to Photos.',
+      exportPdfHint: 'Use Download to save the PDF, or Share to send it (e.g. to another app).',
+      exportClose: 'Close',
       rosterSecFriends: 'Friends',
       rosterSecOthers: 'Others',
       delete: 'Delete',
@@ -303,6 +315,14 @@
   var cpTitlePressTimer = null;
   var cpTitleLongPress = false;
   var cpRosterBodyBound = false;
+  var exportOfferBound = false;
+  var exportOfferState = {
+    revokePreview: null,
+    blob: null,
+    filename: null,
+    file: null,
+    kind: null,
+  };
 
   function t(k) {
     var L = TEXT[state.currentLang] || TEXT.zh;
@@ -380,6 +400,8 @@
     if (bnav) bnav.setAttribute('aria-label', t('navMainAria'));
     var bsearchClose = $('btn-close-search');
     if (bsearchClose) bsearchClose.setAttribute('aria-label', t('searchCloseAria'));
+    var eoo = $('export-offer-overlay');
+    if (eoo && !eoo.hidden && exportOfferState.kind) applyExportOfferStrings(exportOfferState.kind);
     applyEditorTemplateStrings();
   }
 
@@ -1147,6 +1169,157 @@
     return s || fallback || 'export';
   }
 
+  function getExportHtml2CanvasScale() {
+    try {
+      if (window.matchMedia('(max-width: 480px)').matches) return 1.5;
+    } catch (e) {}
+    return 2;
+  }
+
+  function canShareFile(file) {
+    try {
+      return typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function preferExportOfferModal(file) {
+    if (file && canShareFile(file)) return true;
+    try {
+      if (window.matchMedia('(max-width: 768px)').matches) return true;
+    } catch (e) {}
+    return (navigator.maxTouchPoints || 0) > 0;
+  }
+
+  function triggerBlobDownload(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.position = 'fixed';
+    a.style.left = '-9999px';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () {
+      URL.revokeObjectURL(url);
+    }, 4000);
+  }
+
+  function applyExportOfferStrings(kind) {
+    var title = $('export-offer-title');
+    var hint = $('export-offer-hint');
+    var shareBtn = $('export-offer-share');
+    var dlBtn = $('export-offer-download');
+    var closeBtn = $('export-offer-close');
+    if (title) title.textContent = t('exportReadyTitle');
+    if (hint) hint.textContent = kind === 'pdf' ? t('exportPdfHint') : t('exportLongPressHint');
+    if (shareBtn) shareBtn.textContent = t('exportShareBtn');
+    if (dlBtn) dlBtn.textContent = t('exportDownloadBtn');
+    if (closeBtn) closeBtn.textContent = t('exportClose');
+  }
+
+  function closeExportOffer() {
+    if (exportOfferState.revokePreview) {
+      exportOfferState.revokePreview();
+      exportOfferState.revokePreview = null;
+    }
+    exportOfferState.blob = null;
+    exportOfferState.filename = null;
+    exportOfferState.file = null;
+    exportOfferState.kind = null;
+    var img = $('export-offer-img');
+    if (img) img.removeAttribute('src');
+    var pdfBadge = $('export-offer-pdf-badge');
+    if (pdfBadge) pdfBadge.hidden = true;
+    var wrap = $('export-offer-preview-wrap');
+    if (wrap) wrap.hidden = false;
+    var ov = $('export-offer-overlay');
+    if (ov) {
+      ov.hidden = true;
+      ov.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function openExportOffer(blob, filename, mime, kind) {
+    closeExportOffer();
+    var file = new File([blob], filename, { type: mime || 'application/octet-stream' });
+    exportOfferState.blob = blob;
+    exportOfferState.filename = filename;
+    exportOfferState.file = file;
+    exportOfferState.kind = kind;
+
+    var ov = $('export-offer-overlay');
+    var img = $('export-offer-img');
+    var wrap = $('export-offer-preview-wrap');
+    var pdfBadge = $('export-offer-pdf-badge');
+    applyExportOfferStrings(kind);
+
+    if (kind === 'pdf') {
+      if (wrap) wrap.hidden = true;
+      if (pdfBadge) pdfBadge.hidden = false;
+    } else {
+      if (wrap) wrap.hidden = false;
+      if (pdfBadge) pdfBadge.hidden = true;
+      if (blob && img) {
+        var previewUrl = URL.createObjectURL(blob);
+        exportOfferState.revokePreview = function () {
+          URL.revokeObjectURL(previewUrl);
+        };
+        img.src = previewUrl;
+      }
+    }
+
+    var shareBtn = $('export-offer-share');
+    if (shareBtn) shareBtn.hidden = !canShareFile(file);
+
+    if (ov) {
+      ov.hidden = false;
+      ov.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function finishImageExportFromCanvas(canvas, safeBase) {
+    var filename = safeBase + '.png';
+    canvas.toBlob(
+      function (blob) {
+        if (!blob) return;
+        var file = new File([blob], filename, { type: 'image/png' });
+        if (preferExportOfferModal(file)) {
+          openExportOffer(blob, filename, 'image/png', 'image');
+        } else {
+          triggerBlobDownload(blob, filename);
+        }
+      },
+      'image/png',
+      0.95
+    );
+  }
+
+  function bindExportOffer() {
+    if (exportOfferBound) return;
+    exportOfferBound = true;
+    var bd = $('export-offer-backdrop');
+    var closeBtn = $('export-offer-close');
+    var dl = $('export-offer-download');
+    var sh = $('export-offer-share');
+    function onShare() {
+      var f = exportOfferState.file;
+      if (!f || typeof navigator.share !== 'function') return;
+      navigator.share({ files: [f] }).catch(function () {});
+    }
+    function onDownload() {
+      if (exportOfferState.blob && exportOfferState.filename) {
+        triggerBlobDownload(exportOfferState.blob, exportOfferState.filename);
+      }
+    }
+    if (bd) bd.addEventListener('click', closeExportOffer);
+    if (closeBtn) closeBtn.addEventListener('click', closeExportOffer);
+    if (dl) dl.addEventListener('click', onDownload);
+    if (sh) sh.addEventListener('click', onShare);
+  }
+
   // html2canvas: folder capture is lifted from its parent; single-card wrap is body-only and removed after.
   function captureAndDownloadPng(el, downloadBaseName) {
     if (!el || typeof html2canvas !== 'function') return;
@@ -1197,13 +1370,15 @@
       }
     }
 
-    html2canvas(el, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' })
+    html2canvas(el, {
+      scale: getExportHtml2CanvasScale(),
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+    })
       .then(function (canvas) {
         cleanup();
-        var a = document.createElement('a');
-        a.download = safeBase + '.png';
-        a.href = canvas.toDataURL('image/png');
-        a.click();
+        finishImageExportFromCanvas(canvas, safeBase);
       })
       .catch(function () {
         cleanup();
@@ -1248,7 +1423,7 @@
     }
 
     html2canvas(el, {
-      scale: 2,
+      scale: getExportHtml2CanvasScale(),
       useCORS: true,
       logging: false,
       backgroundColor: null,
@@ -1279,7 +1454,23 @@
         var x = margin + (maxW - imgW) / 2;
         var y = margin + (maxH - imgH) / 2;
         pdf.addImage(imgData, 'PNG', x, y, imgW, imgH);
-        pdf.save(safeBase + '.pdf');
+        var filename = safeBase + '.pdf';
+        var pdfBlob = null;
+        try {
+          pdfBlob = pdf.output('blob');
+        } catch (err) {
+          pdfBlob = null;
+        }
+        if (!pdfBlob) {
+          pdf.save(filename);
+          return;
+        }
+        var file = new File([pdfBlob], filename, { type: 'application/pdf' });
+        if (preferExportOfferModal(file)) {
+          openExportOffer(pdfBlob, filename, 'application/pdf', 'pdf');
+        } else {
+          triggerBlobDownload(pdfBlob, filename);
+        }
       })
       .catch(function () {
         cleanup();
@@ -2508,6 +2699,7 @@
         var fid = parseInt(b.getAttribute('data-pick-folder-id'), 10);
         if (!isNaN(fid)) addCardToFolderChoice(fid);
       });
+    bindExportOffer();
   }
 
   function bindCardArrows() {

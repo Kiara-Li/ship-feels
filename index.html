@@ -407,7 +407,7 @@
           <p class="onboarding-modal__p">创建嗑点卡片，随手打 #标签# 记录情绪或人物</p>
           <p class="onboarding-modal__p">去「搜索」翻旧糖，把好嗑的收进清单</p>
           <p class="onboarding-modal__p">清单可以导出 PDF，用来投喂亲友：请吃家产！</p>
-          <p class="onboarding-modal__warn">⚠️ 当前为 demo 模式，数据不会长期保存，请勿刷新页面</p>
+          <p class="onboarding-modal__warn">⚠️ 当前为 demo 模式，数据不会长期保存</p>
         </div>
         <div class="onboarding-modal__divider" aria-hidden="true"></div>
         <div class="onboarding-modal__pane onboarding-modal__pane--en" lang="en">
@@ -418,11 +418,28 @@
           <p class="onboarding-modal__p">Lists can export as <strong>PDF</strong> to share with friends.</p>
           <p class="onboarding-modal__warn">⚠️ Demo: your data may be lost if you refresh. Don’t refresh if you want to keep it.</p>
           <p class="onboarding-modal__p onboarding-modal__p--langtip">
-            <strong>Language:</strong> tap <strong>Settings</strong> (bottom tab) → choose <strong>中文</strong> or <strong>English</strong>. You can
-            also follow your phone or computer system language.
+            <strong>Language:</strong> tap <strong>Settings</strong> (bottom tab) → choose <strong>中文</strong> or <strong>English</strong>.
           </p>
         </div>
         <button type="button" class="btn-primary onboarding-modal__cta" id="onboarding-cta" data-i18n="onboardCta">知道了</button>
+      </div>
+    </div>
+
+    <!-- 导出结果（手机：分享 / 长按预览；桌面：可直接下载） -->
+    <div class="export-offer-overlay" id="export-offer-overlay" hidden aria-hidden="true">
+      <button type="button" class="export-offer-backdrop" id="export-offer-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></button>
+      <div class="export-offer-panel" role="dialog" aria-modal="true" aria-labelledby="export-offer-title">
+        <h2 class="export-offer-title" id="export-offer-title"></h2>
+        <div class="export-offer-preview-wrap" id="export-offer-preview-wrap">
+          <img class="export-offer-img" id="export-offer-img" alt="" />
+        </div>
+        <p class="export-offer-pdf-badge" id="export-offer-pdf-badge" hidden>PDF</p>
+        <p class="export-offer-hint" id="export-offer-hint"></p>
+        <div class="export-offer-actions">
+          <button type="button" class="btn-primary export-offer-share" id="export-offer-share" hidden></button>
+          <button type="button" class="export-offer-btn export-offer-download" id="export-offer-download"></button>
+          <button type="button" class="export-offer-btn export-offer-close" id="export-offer-close"></button>
+        </div>
       </div>
     </div>
 
