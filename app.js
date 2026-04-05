@@ -215,6 +215,10 @@
         quote: '也太甜了吧好开心。',
         tags: ['告白', '心动', '刀子糖'],
       },
+      {
+        quote: '这一段我可以单曲循环到地老天荒。',
+        tags: ['名台词', '后劲大', '上头'],
+      },
     ],
     en: [
       {
@@ -232,6 +236,10 @@
       {
         quote: 'From that second I knew—I was gone.',
         tags: ['confession', 'hurt/comfort', 'angst'],
+      },
+      {
+        quote: 'That line lives in my head rent-free forever.',
+        tags: ['quote', 'brainrot', 'obsessed'],
       },
     ],
   };
@@ -491,7 +499,8 @@
     var rows = DEMO_CARD_LANG[lang] || DEMO_CARD_LANG.zh;
     var cards = [];
     for (var i = 0; i < 5; i++) {
-      var row = rows[i];
+      var row = rows[i] || rows[rows.length - 1];
+      if (!row) break;
       cards.push({
         id: i + 1,
         image: DEMO_CARD_IMAGES[i],
@@ -579,6 +588,23 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function setClass(el, token, on) {
+    if (!el || !el.classList) return;
+    if (on) el.classList.add(token);
+    else el.classList.remove(token);
+  }
+
+  function eventTargetElement(ev) {
+    var t = ev && ev.target;
+    if (!t) return null;
+    return t.nodeType === 1 ? t : t.parentElement;
+  }
+
+  function closestFromEvent(ev, selector) {
+    var el = eventTargetElement(ev);
+    return el && typeof el.closest === 'function' ? el.closest(selector) : null;
   }
 
   function escapeRegExp(s) {
@@ -968,7 +994,7 @@
 
   function setSortModalOpen(open) {
     if (!dom.sortOverlay) return;
-    dom.sortOverlay.classList.toggle('is-open', open);
+    setClass(dom.sortOverlay, 'is-open', open);
     dom.sortOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
     if (open) syncSortModalActive();
   }
@@ -976,7 +1002,7 @@
   function syncSortModalActive() {
     document.querySelectorAll('[data-sort-opt]').forEach(function (btn) {
       var k = btn.getAttribute('data-sort-opt');
-      btn.classList.toggle('is-active', k === 'story' && state.feedSortStory);
+      setClass(btn, 'is-active', k === 'story' && state.feedSortStory);
     });
   }
 
@@ -1140,7 +1166,7 @@
 
   function setFolderExportMode(on) {
     state.isExportMode = !!on;
-    document.body.classList.toggle('export-mode', state.isExportMode);
+    setClass(document.body, 'export-mode', state.isExportMode);
     var hex = $('folder-header-export');
     if (hex) hex.setAttribute('aria-hidden', state.isExportMode ? 'false' : 'true');
     if (!state.isExportMode) {
@@ -1589,9 +1615,9 @@
   }
 
   function onCardArrowClick(e) {
-    var btn = e.target.closest('.card-arrow-btn');
+    var btn = closestFromEvent(e, '.card-arrow-btn');
     if (!btn) return;
-    var cardEl = e.target.closest('.card--tall');
+    var cardEl = closestFromEvent(e, '.card--tall');
     if (!cardEl) return;
     var id = parseInt(cardEl.getAttribute('data-card-id'), 10);
     if (isNaN(id)) return;
@@ -1764,9 +1790,9 @@
   }
 
   function onCardDeleteClick(e) {
-    var del = e.target.closest('.card-delete-btn');
+    var del = closestFromEvent(e, '.card-delete-btn');
     if (!del) return;
-    var cardEl = e.target.closest('.card--tall');
+    var cardEl = closestFromEvent(e, '.card--tall');
     var id = parseInt(
       del.getAttribute('data-delete-card-id') ||
         (cardEl && cardEl.getAttribute('data-card-id')),
@@ -1779,10 +1805,10 @@
   }
 
   function onCardOpenEditorClick(e) {
-    if (e.target.closest('.card-arrow-btn')) return;
-    if (e.target.closest('.card-delete-btn')) return;
-    if (e.target.closest('.folder-card-grip')) return;
-    var cardEl = e.target.closest('.card--tall');
+    if (closestFromEvent(e, '.card-arrow-btn')) return;
+    if (closestFromEvent(e, '.card-delete-btn')) return;
+    if (closestFromEvent(e, '.folder-card-grip')) return;
+    var cardEl = closestFromEvent(e, '.card--tall');
     if (!cardEl) return;
     var id = parseInt(cardEl.getAttribute('data-card-id'), 10);
     if (isNaN(id)) return;
@@ -1891,20 +1917,20 @@
     var home = $('btn-home');
     var search = $('btn-search');
     var settings = $('btn-settings');
-    if (home) home.classList.toggle('bottom-nav__item--active', tab === 'home');
-    if (search) search.classList.toggle('bottom-nav__item--active', tab === 'search');
-    if (settings) settings.classList.toggle('bottom-nav__item--active', tab === 'settings');
+    if (home) setClass(home, 'bottom-nav__item--active', tab === 'home');
+    if (search) setClass(search, 'bottom-nav__item--active', tab === 'search');
+    if (settings) setClass(settings, 'bottom-nav__item--active', tab === 'settings');
   }
 
   function setSettingsOpen(open) {
     if (!dom.settingsOverlay) return;
-    dom.settingsOverlay.classList.toggle('is-open', open);
+    setClass(dom.settingsOverlay, 'is-open', open);
     dom.settingsOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
   }
 
   function setEditorOpen(open) {
     if (!dom.editorOverlay) return;
-    dom.editorOverlay.classList.toggle('is-open', open);
+    setClass(dom.editorOverlay, 'is-open', open);
     dom.editorOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
     if (!open && dom.imageTypePanel) dom.imageTypePanel.hidden = true;
     if (open) {
@@ -1916,7 +1942,7 @@
 
   function setCpRosterOpen(open) {
     if (!dom.cpRosterOverlay) return;
-    dom.cpRosterOverlay.classList.toggle('is-open', open);
+    setClass(dom.cpRosterOverlay, 'is-open', open);
     dom.cpRosterOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
     if (open) {
       if (state.cpRoster.groups[0]) state.cpRoster.groups[0].title = state.cpName;
@@ -2032,7 +2058,7 @@
       }
     });
     dom.cpRosterBody.addEventListener('click', function (e) {
-      var addBtn = e.target.closest('[data-add-group]');
+      var addBtn = closestFromEvent(e, '[data-add-group]');
       if (addBtn && dom.cpRosterBody.contains(addBtn)) {
         var gi = parseInt(addBtn.getAttribute('data-add-group'), 10);
         if (isNaN(gi) || !state.cpRoster.groups[gi]) return;
@@ -2047,7 +2073,7 @@
         saveState();
         return;
       }
-      var delBtn = e.target.closest('[data-del-item]');
+      var delBtn = closestFromEvent(e, '[data-del-item]');
       if (delBtn && dom.cpRosterBody.contains(delBtn)) {
         var did = parseInt(delBtn.getAttribute('data-del-item'), 10);
         if (isNaN(did)) return;
@@ -2159,7 +2185,7 @@
 
   function setTemplateOpen(open) {
     if (!dom.templateOverlay) return;
-    dom.templateOverlay.classList.toggle('is-open', open);
+    setClass(dom.templateOverlay, 'is-open', open);
     dom.templateOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
   }
 
@@ -2477,7 +2503,7 @@
         if (loc !== 'zh' && loc !== 'en') return;
         state.currentLang = loc;
         document.querySelectorAll('.lang-toggle__btn').forEach(function (b) {
-          b.classList.toggle('is-active', b.getAttribute('data-locale') === loc);
+          setClass(b, 'is-active', b.getAttribute('data-locale') === loc);
         });
         syncDemoContentToCurrentLang();
         applyUiStrings();
@@ -2553,7 +2579,7 @@
       });
     if (dom.sortOverlay)
       dom.sortOverlay.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-sort-opt]');
+        var b = closestFromEvent(e, '[data-sort-opt]');
         if (!b || !dom.sortOverlay.contains(b)) return;
         e.preventDefault();
         handleSortOption(b.getAttribute('data-sort-opt'));
@@ -2593,7 +2619,7 @@
     var feg = $('folder-emoji-grid');
     if (feg)
       feg.addEventListener('click', function (e) {
-        var b = e.target.closest('.folder-emoji-cell');
+        var b = closestFromEvent(e, '.folder-emoji-cell');
         if (!b || !feg.contains(b)) return;
         var em = b.getAttribute('data-emoji');
         if (!em) return;
@@ -2659,20 +2685,21 @@
 
     if (dom.foldersList)
       dom.foldersList.addEventListener('click', function (e) {
-        var b = e.target.closest('.folder-item-btn');
+        var b = closestFromEvent(e, '.folder-item-btn');
         if (!b || !dom.foldersList.contains(b)) return;
         var id = parseInt(b.getAttribute('data-folder-id'), 10);
-        if (e.target.tagName === 'INPUT') return;
-        if (e.target.closest('.folder-delete-btn')) {
+        var te = eventTargetElement(e);
+        if (te && te.tagName === 'INPUT') return;
+        if (closestFromEvent(e, '.folder-delete-btn')) {
           e.preventDefault();
           e.stopPropagation();
           deleteFolder(id);
           return;
         }
-        if (e.target.closest('.folder-item-btn__name') && e.target.tagName !== 'INPUT') {
+        if (closestFromEvent(e, '.folder-item-btn__name') && (!te || te.tagName !== 'INPUT')) {
           e.preventDefault();
           e.stopPropagation();
-          startFolderRename(id, e.target.closest('.folder-item-btn__name'));
+          startFolderRename(id, closestFromEvent(e, '.folder-item-btn__name'));
           return;
         }
         closeFolderList();
@@ -2694,7 +2721,7 @@
       $('folder-picker-cancel').addEventListener('click', closeFolderPicker);
     if (dom.folderPickerList)
       dom.folderPickerList.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-pick-folder-id]');
+        var b = closestFromEvent(e, '[data-pick-folder-id]');
         if (!b || !dom.folderPickerList.contains(b)) return;
         var fid = parseInt(b.getAttribute('data-pick-folder-id'), 10);
         if (!isNaN(fid)) addCardToFolderChoice(fid);
@@ -2717,7 +2744,7 @@
     }
     if (dom.tagIndexList) {
       dom.tagIndexList.addEventListener('click', function (e) {
-        var btn = e.target.closest('.pill-btn');
+        var btn = closestFromEvent(e, '.pill-btn');
         if (!btn || !dom.tagIndexList.contains(btn)) return;
         var tag = btn.getAttribute('data-tag');
         if (tag) openTagDetail(tag);
@@ -2728,7 +2755,7 @@
   function bindFolderDrag() {
     if (!dom.folderDetailCards) return;
     dom.folderDetailCards.addEventListener('dragstart', function (e) {
-      var wrap = e.target.closest('.folder-draggable-card');
+      var wrap = closestFromEvent(e, '.folder-draggable-card');
       if (!wrap) return;
       var id = parseInt(wrap.getAttribute('data-card-id'), 10);
       if (!isNaN(id)) {
@@ -2759,7 +2786,7 @@
         state.draggedCardId = null;
         return;
       }
-      var wrap = e.target.closest('.folder-draggable-card');
+      var wrap = closestFromEvent(e, '.folder-draggable-card');
       if (wrap) {
         var targetId = parseInt(wrap.getAttribute('data-card-id'), 10);
         if (isNaN(targetId) || draggedId === targetId) {
@@ -2802,7 +2829,7 @@
     });
     document.addEventListener('click', function (e) {
       if (!dom.imageTypePanel || dom.imageTypePanel.hidden) return;
-      if (e.target.closest('#editor-add-image') || e.target.closest('#image-type-panel')) return;
+      if (closestFromEvent(e, '#editor-add-image') || closestFromEvent(e, '#image-type-panel')) return;
       dom.imageTypePanel.hidden = true;
     });
 
@@ -2829,7 +2856,7 @@
         e.preventDefault();
       });
       tagSuggestEl.addEventListener('click', function (e) {
-        var btn = e.target.closest('.tag-suggest__item');
+        var btn = closestFromEvent(e, '.tag-suggest__item');
         if (!btn) return;
         var tg = btn.getAttribute('data-tag');
         if (tg) insertTagSuggestion(tg);
@@ -2837,13 +2864,13 @@
     }
     document.addEventListener('click', function (e) {
       if (!tagSuggestEl || tagSuggestEl.hidden) return;
-      if (e.target.closest('.tag-suggest') || e.target.closest('.textarea-shell')) return;
+      if (closestFromEvent(e, '.tag-suggest') || closestFromEvent(e, '.textarea-shell')) return;
       closeTagSuggest();
     });
 
     if (dom.editorQuoteFromWrap) {
       dom.editorQuoteFromWrap.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-quote-from-id]');
+        var b = closestFromEvent(e, '[data-quote-from-id]');
         if (!b || !dom.editorQuoteFromWrap.contains(b)) return;
         var qid = parseInt(b.getAttribute('data-quote-from-id'), 10);
         if (isNaN(qid)) return;
@@ -2899,7 +2926,7 @@
 
     if (dom.editorTagPreview) {
       dom.editorTagPreview.addEventListener('click', function (e) {
-        var b = e.target.closest('.tag-delete-btn');
+        var b = closestFromEvent(e, '.tag-delete-btn');
         if (!b) return;
         var tag = b.getAttribute('data-tag');
         if (!tag || !dom.editorBody) return;
@@ -2914,7 +2941,7 @@
 
     if (dom.editorImageSlots) {
       dom.editorImageSlots.addEventListener('click', function (e) {
-        var b = e.target.closest('.editor-image-remove');
+        var b = closestFromEvent(e, '.editor-image-remove');
         if (!b) return;
         var idx = parseInt(b.getAttribute('data-image-index'), 10);
         if (isNaN(idx)) return;
@@ -2995,7 +3022,7 @@
     document.documentElement.lang = state.currentLang === 'zh' ? 'zh-CN' : 'en';
     if (dom.cpTitleBtn) dom.cpTitleBtn.textContent = state.cpName;
     document.querySelectorAll('.lang-toggle__btn').forEach(function (b) {
-      b.classList.toggle('is-active', b.getAttribute('data-locale') === state.currentLang);
+      setClass(b, 'is-active', b.getAttribute('data-locale') === state.currentLang);
     });
     applyUiStrings();
     if (dom.cpTitleBtn) dom.cpTitleBtn.textContent = state.cpName;
