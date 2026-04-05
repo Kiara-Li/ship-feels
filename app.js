@@ -56,7 +56,7 @@
       folderEmojiPickAria: '选择背景图案',
       imageTypeFull: '全屏',
       imageTypeSubtitle: '字幕',
-      demoCardHint: '示范 · 随手可删',
+      demoCardHint: '示范 · 可删',
       rosterSecFriends: '朋友',
       rosterSecOthers: '其他',
       delete: '删除',
@@ -188,11 +188,7 @@
   var DEMO_CARD_LANG = {
     zh: [
       {
-        quote: '指尖悬在发送键上好久了……他会不会已读不回啊。',
-        tags: ['试探', '心动', '聊天框文学'],
-      },
-      {
-        quote: '这个对视我直接没了，这是什么神仙镜头。',
+        quote: '这是什么神仙镜头。',
         tags: ['眼神戏', '名场面', '嗑到了'],
       },
       {
@@ -204,15 +200,11 @@
         tags: ['拥抱', '高糖', '反复观看'],
       },
       {
-        quote: '从那一刻起我就知道——完了，栽了。',
+        quote: '也太甜了吧好开心。',
         tags: ['告白', '心动', '刀子糖'],
       },
     ],
     en: [
-      {
-        quote: "My thumb's been hovering over Send for ages. Left on read? Please no.",
-        tags: ['angst', 'texting', 'soft'],
-      },
       {
         quote: 'That look melted me. Who allowed this cinematography.',
         tags: ['eye contact', 'iconic', 'feral'],
@@ -234,9 +226,9 @@
 
   var DEMO_FOLDER_NAMES = {
     zh: {
-      a: '新文·生长痛素材',
-      b: 'HP paro 口嗨',
-      c: '快穿 paro 脑洞',
+      a: '新文·素材',
+      b: 'paro口嗨和一些脑洞',
+      c: '点击可以修改清单名称',
     },
     en: {
       a: 'Hurt/comfort WIP',
