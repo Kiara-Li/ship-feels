@@ -21,6 +21,8 @@
       editorHidden: '编辑嗑点',
       editorDone: '完成',
       addImage: '添加',
+      addLink: '参考链接',
+      addLinkPh: '粘贴含 ?t= / start= 的视频链接，可自动填时间点',
       quotePh: '在这里输入台词',
       quoteFrom: '这句话来自——',
       charA: '角色A',
@@ -53,6 +55,10 @@
       sortCustom: '自定义',
       closeOverlay: '关闭',
       folderEmojiBg: '背景图案',
+      deleteConfirmMsg: '确定要删除这个嗑点吗？',
+      deleteConfirmOk: '删除',
+      deleteConfirmCancel: '取消',
+      savedTitle: '嗑点已记录',
     },
     en: {
       home: 'Home',
@@ -71,6 +77,8 @@
       editorHidden: 'Edit moment',
       editorDone: 'Done',
       addImage: 'Add photos',
+      addLink: 'Link',
+      addLinkPh: 'Paste a URL with ?t= or start= to fill the time field',
       quotePh: 'Quote…',
       quoteFrom: 'This line is from —',
       charA: 'Role A',
@@ -98,6 +106,10 @@
       storyEpisodePh: 'S1E1 or season / episode',
       storyTimePh: '12:34',
       folderEmojiBg: 'Background pattern',
+      deleteConfirmMsg: 'Delete this moment?',
+      deleteConfirmOk: 'Delete',
+      deleteConfirmCancel: 'Cancel',
+      savedTitle: 'Ship moment saved',
     },
   };
 
@@ -285,6 +297,63 @@
 
   function escapeRegExp(s) {
     return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function normalizeUrlForParse(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    if (/^https?:\/\//i.test(s)) return s;
+    return 'https://' + s;
+  }
+
+  function parseSecondsFromTimeParam(val) {
+    if (val == null || val === '') return null;
+    var v = String(val).trim();
+    if (!v) return null;
+    if (/^\d+$/.test(v)) return parseInt(v, 10);
+    var h = v.match(/(\d+)\s*h/i);
+    var m = v.match(/(\d+)\s*m/i);
+    var sPart = v.match(/(\d+)\s*s/i);
+    if (h || m || sPart) {
+      var out = 0;
+      if (h) out += parseInt(h[1], 10) * 3600;
+      if (m) out += parseInt(m[1], 10) * 60;
+      if (sPart) out += parseInt(sPart[1], 10);
+      return out;
+    }
+    if (/^\d+:\d+$/.test(v)) {
+      var p2 = v.split(':');
+      return parseInt(p2[0], 10) * 60 + parseInt(p2[1], 10);
+    }
+    if (/^\d+:\d+:\d+$/.test(v)) {
+      var p3 = v.split(':');
+      return parseInt(p3[0], 10) * 3600 + parseInt(p3[1], 10) * 60 + parseInt(p3[2], 10);
+    }
+    return null;
+  }
+
+  function secondsToMmSs(sec) {
+    if (sec == null || isNaN(sec) || sec < 0) return null;
+    sec = Math.floor(sec);
+    var mm = Math.floor(sec / 60);
+    var ss = sec % 60;
+    return mm + ':' + (ss < 10 ? '0' + ss : ss);
+  }
+
+  function applyTimeFromSourceUrlInput() {
+    if (!dom.editorSourceUrl || !dom.editorTimecode) return;
+    var href = normalizeUrlForParse(dom.editorSourceUrl.value);
+    if (!href) return;
+    try {
+      var u = new URL(href);
+      var raw = u.searchParams.get('t');
+      if (raw == null || raw === '') raw = u.searchParams.get('start');
+      if (raw == null || raw === '') return;
+      var secs = parseSecondsFromTimeParam(raw);
+      if (secs == null) return;
+      var tc = secondsToMmSs(secs);
+      if (tc) dom.editorTimecode.value = tc;
+    } catch (err) {}
   }
 
   function extractTags(text) {
@@ -680,7 +749,36 @@
     if (!el || typeof html2canvas !== 'function') return;
     syncFolderExportStatic();
     syncExportEmojiBg();
+
+    // Lift el out of the scrollable container so html2canvas sees the full height.
+    var parent = el.parentNode;
+    var nextSib = el.nextSibling;
+    var placeholder = document.createElement('div');
+    placeholder.style.display = 'none';
+    parent.insertBefore(placeholder, nextSib);
+
+    var w = el.offsetWidth;
+    el.style.position = 'absolute';
+    el.style.top = '-99999px';
+    el.style.left = '0';
+    el.style.width = w + 'px';
+    el.style.maxWidth = 'none';
+    el.style.height = 'auto';
+    el.style.overflow = 'visible';
+    document.body.appendChild(el);
+
     html2canvas(el, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' }).then(function (canvas) {
+      // Restore el to original location.
+      el.style.position = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.maxWidth = '';
+      el.style.height = '';
+      el.style.overflow = '';
+      parent.insertBefore(el, placeholder);
+      placeholder.remove();
+
       var a = document.createElement('a');
       var folder = getSelectedFolder();
       var base =
@@ -693,6 +791,17 @@
       a.download = base + '.png';
       a.href = canvas.toDataURL('image/png');
       a.click();
+    }).catch(function () {
+      // Restore even on failure.
+      el.style.position = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.maxWidth = '';
+      el.style.height = '';
+      el.style.overflow = '';
+      parent.insertBefore(el, placeholder);
+      placeholder.remove();
     });
   }
 
@@ -849,6 +958,111 @@
     input.select();
   }
 
+  function showDeleteConfirm(cardId) {
+    var overlay = $('delete-confirm-overlay');
+    if (!overlay) return;
+    overlay.querySelector('.delete-confirm-msg').textContent = t('deleteConfirmMsg');
+    overlay.querySelector('.delete-confirm-ok').textContent = t('deleteConfirmOk');
+    overlay.querySelector('.delete-confirm-cancel').textContent = t('deleteConfirmCancel');
+    overlay.classList.add('is-open');
+    overlay.setAttribute('aria-hidden', 'false');
+
+    function cleanup() {
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.querySelector('.delete-confirm-ok').removeEventListener('click', onOk);
+      overlay.querySelector('.delete-confirm-cancel').removeEventListener('click', onCancel);
+      overlay.querySelector('.delete-confirm-backdrop').removeEventListener('click', onCancel);
+    }
+    function onOk() { cleanup(); deleteCard(cardId); }
+    function onCancel() { cleanup(); }
+
+    overlay.querySelector('.delete-confirm-ok').addEventListener('click', onOk);
+    overlay.querySelector('.delete-confirm-cancel').addEventListener('click', onCancel);
+    overlay.querySelector('.delete-confirm-backdrop').addEventListener('click', onCancel);
+  }
+
+  function showSavedOverlay(cardId) {
+    var card = getCardById(cardId);
+    if (!card) return;
+
+    var overlay = document.createElement('div');
+    overlay.className = 'saved-overlay';
+
+    var backdrop = document.createElement('div');
+    backdrop.className = 'saved-overlay__backdrop';
+    overlay.appendChild(backdrop);
+
+    var modal = document.createElement('div');
+    modal.className = 'saved-overlay__card';
+
+    var check = document.createElement('div');
+    check.className = 'saved-overlay__check';
+    check.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" ' +
+      'stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+    modal.appendChild(check);
+
+    var title = document.createElement('p');
+    title.className = 'saved-overlay__title';
+    title.textContent = t('savedTitle');
+    modal.appendChild(title);
+
+    var actions = document.createElement('div');
+    actions.className = 'saved-overlay__actions';
+
+    var btnShare = document.createElement('button');
+    btnShare.type = 'button';
+    btnShare.className = 'saved-overlay__btn saved-overlay__btn--share';
+    btnShare.textContent = t('folderShare');
+    actions.appendChild(btnShare);
+
+    var row = document.createElement('div');
+    row.className = 'saved-overlay__row';
+
+    var btnList = document.createElement('button');
+    btnList.type = 'button';
+    btnList.className = 'saved-overlay__btn saved-overlay__btn--list';
+    btnList.textContent = t('pickFolder');
+    row.appendChild(btnList);
+
+    var btnDone = document.createElement('button');
+    btnDone.type = 'button';
+    btnDone.className = 'saved-overlay__btn saved-overlay__btn--done';
+    btnDone.textContent = t('folderDone');
+    row.appendChild(btnDone);
+
+    actions.appendChild(row);
+    modal.appendChild(actions);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    function dismiss() {
+      modal.classList.add('is-dismissing');
+      setTimeout(function () {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      }, 180);
+    }
+
+    backdrop.addEventListener('click', dismiss);
+    btnDone.addEventListener('click', dismiss);
+
+    btnShare.addEventListener('click', function () {
+      dismiss();
+      var text = card.quote || '';
+      if (navigator.share) {
+        navigator.share({ text: text }).catch(function () {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).catch(function () {});
+      }
+    });
+
+    btnList.addEventListener('click', function () {
+      dismiss();
+      setTimeout(function () { openFolderPicker(cardId); }, 200);
+    });
+  }
+
   function onCardDeleteClick(e) {
     var del = e.target.closest('.card-delete-btn');
     if (!del) return;
@@ -861,7 +1075,7 @@
     if (isNaN(id)) return;
     e.preventDefault();
     e.stopPropagation();
-    deleteCard(id);
+    showDeleteConfirm(id);
   }
 
   function onCardOpenEditorClick(e) {
@@ -1004,11 +1218,13 @@
     if (dom.editorBody) dom.editorBody.value = '';
     if (dom.editorEpisode) dom.editorEpisode.value = '';
     if (dom.editorTimecode) dom.editorTimecode.value = '';
+    if (dom.editorSourceUrl) dom.editorSourceUrl.value = '';
     state.selectedChar = null;
     document.querySelectorAll('.char-btn').forEach(function (b) {
       b.classList.remove('is-selected');
     });
     renderEditorImages();
+    closeTagSuggest();
     syncEditor();
     resizeEditorTextarea();
   }
@@ -1031,9 +1247,11 @@
       card.text || ((card.tags || []).map(function (tg) { return '#' + tg + '#'; }).join(' '));
     if (dom.editorEpisode) dom.editorEpisode.value = card.episode || '';
     if (dom.editorTimecode) dom.editorTimecode.value = card.timecode || '';
+    if (dom.editorSourceUrl) dom.editorSourceUrl.value = card.sourceUrl || '';
     renderEditorImages();
     syncEditor();
     resizeEditorTextarea();
+    closeTagSuggest();
     setEditorOpen(true);
   }
 
@@ -1102,6 +1320,80 @@
     syncEditor();
   }
 
+  var tagSuggestEl = null;
+
+  function isClosingHash(val, hashIdx) {
+    var j = hashIdx - 1;
+    while (j >= 0) {
+      var c = val.charAt(j);
+      if (c === '#') {
+        var mid = val.slice(j + 1, hashIdx);
+        if (mid.length > 0 && mid.indexOf('#') === -1 && !/\s/.test(mid)) return true;
+        return false;
+      }
+      if (/\s/.test(c)) return false;
+      j--;
+    }
+    return false;
+  }
+
+  function getTagPrefix() {
+    if (!dom.editorBody) return null;
+    var pos = dom.editorBody.selectionStart;
+    if (pos !== dom.editorBody.selectionEnd) return null;
+    var val = dom.editorBody.value;
+    var i = pos - 1;
+    while (i >= 0 && val.charAt(i) !== '#' && !/[\s\n\r]/.test(val.charAt(i))) i--;
+    if (i < 0 || /[\s\n\r]/.test(val.charAt(i))) return null;
+    var prefix = val.slice(i + 1, pos);
+    if (prefix.indexOf('#') !== -1) return null;
+    if (isClosingHash(val, i)) return null;
+    return { start: i, prefix: prefix };
+  }
+
+  function closeTagSuggest() {
+    if (tagSuggestEl) tagSuggestEl.hidden = true;
+  }
+
+  function updateTagSuggest() {
+    if (!tagSuggestEl) return;
+    var info = getTagPrefix();
+    if (!info) { closeTagSuggest(); return; }
+    var tags = getAllTags();
+    var pf = info.prefix.toLowerCase();
+    var hits = tags.filter(function (tg) {
+      return !pf || tg.toLowerCase().indexOf(pf) === 0;
+    });
+    if (!hits.length) { closeTagSuggest(); return; }
+    if (hits.length > 8) hits = hits.slice(0, 8);
+    tagSuggestEl.innerHTML = hits.map(function (tg) {
+      return '<button type="button" class="tag-suggest__item" data-tag="' +
+        escapeHtml(tg) + '">#' + escapeHtml(tg) + '#</button>';
+    }).join('');
+    tagSuggestEl.hidden = false;
+  }
+
+  function insertTagSuggestion(tag) {
+    var info = getTagPrefix();
+    if (!info || !dom.editorBody) return;
+    var val = dom.editorBody.value;
+    var sel = dom.editorBody.selectionStart;
+    var ins = '#' + tag + '#';
+    dom.editorBody.value = val.slice(0, info.start) + ins + val.slice(sel);
+    var np = info.start + ins.length;
+    closeTagSuggest();
+    dom.editorBody.focus();
+    resizeEditorTextarea();
+    requestAnimationFrame(function () {
+      if (!dom.editorBody) return;
+      dom.editorBody.selectionStart = np;
+      dom.editorBody.selectionEnd = np;
+      try {
+        dom.editorBody.setSelectionRange(np, np);
+      } catch (e) {}
+    });
+  }
+
   function renderEditorImages() {
     if (!dom.editorImageSlots) return;
     if (!state.editorImages.length) {
@@ -1142,6 +1434,7 @@
     var tags = extractTags(body);
     var ep = dom.editorEpisode ? dom.editorEpisode.value.trim() : '';
     var tc = dom.editorTimecode ? dom.editorTimecode.value.trim() : '';
+    var srcUrl = dom.editorSourceUrl ? dom.editorSourceUrl.value.trim() : '';
     var payload = {
       image:
         (state.editorImages[0] && (state.editorImages[0].src || state.editorImages[0])) ||
@@ -1155,16 +1448,13 @@
       text: body,
       episode: ep,
       timecode: tc,
+      sourceUrl: srcUrl,
     };
-    if (state.editingCardId == null) {
-      state.cards.unshift(
-        Object.assign(
-          {
-            id: Date.now(),
-          },
-          payload
-        )
-      );
+    var isNew = state.editingCardId == null;
+    var newId;
+    if (isNew) {
+      newId = Date.now();
+      state.cards.unshift(Object.assign({ id: newId }, payload));
     } else {
       state.cards = state.cards.map(function (c) {
         if (c.id !== state.editingCardId) return c;
@@ -1180,6 +1470,8 @@
     renderSearchResults();
     if (state.selectedTagForDetail) renderTagDetail();
     if (state.selectedFolderId != null) renderFolderDetail();
+
+    if (isNew) showSavedOverlay(newId);
   }
 
   function createNewFolder() {
@@ -1507,6 +1799,12 @@
   }
 
   function bindEditor() {
+    if (dom.editorSourceUrl) {
+      dom.editorSourceUrl.addEventListener('input', applyTimeFromSourceUrlInput);
+      dom.editorSourceUrl.addEventListener('paste', function () {
+        setTimeout(applyTimeFromSourceUrlInput, 0);
+      });
+    }
     document.querySelectorAll('.image-type-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         state.pendingImageType = btn.getAttribute('data-image-type') || 'full';
@@ -1518,6 +1816,41 @@
       if (!dom.imageTypePanel || dom.imageTypePanel.hidden) return;
       if (e.target.closest('#editor-add-image') || e.target.closest('#image-type-panel')) return;
       dom.imageTypePanel.hidden = true;
+    });
+
+    var tsShell = dom.editorBody && dom.editorBody.closest('.textarea-shell');
+    if (tsShell) {
+      tagSuggestEl = document.createElement('div');
+      tagSuggestEl.className = 'tag-suggest';
+      tagSuggestEl.hidden = true;
+      tsShell.parentNode.insertBefore(tagSuggestEl, tsShell.nextSibling);
+
+      dom.editorBody.addEventListener('input', updateTagSuggest);
+      dom.editorBody.addEventListener('compositionend', updateTagSuggest);
+      dom.editorBody.addEventListener('click', updateTagSuggest);
+      dom.editorBody.addEventListener('keyup', function (e) {
+        if (/^Arrow/.test(e.key)) updateTagSuggest();
+      });
+      dom.editorBody.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && tagSuggestEl && !tagSuggestEl.hidden) {
+          e.preventDefault();
+          closeTagSuggest();
+        }
+      });
+      tagSuggestEl.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+      });
+      tagSuggestEl.addEventListener('click', function (e) {
+        var btn = e.target.closest('.tag-suggest__item');
+        if (!btn) return;
+        var tg = btn.getAttribute('data-tag');
+        if (tg) insertTagSuggestion(tg);
+      });
+    }
+    document.addEventListener('click', function (e) {
+      if (!tagSuggestEl || tagSuggestEl.hidden) return;
+      if (e.target.closest('.tag-suggest') || e.target.closest('.textarea-shell')) return;
+      closeTagSuggest();
     });
 
     document.querySelectorAll('.char-btn').forEach(function (btn) {
@@ -1634,6 +1967,7 @@
     dom.editorOverlay = $('editor-overlay');
     dom.editorEpisode = $('editor-episode');
     dom.editorTimecode = $('editor-timecode');
+    dom.editorSourceUrl = $('editor-source-url');
     dom.editorQuote = $('editor-quote');
     dom.editorBody = $('editor-body');
     dom.editorHighlight = $('editor-highlight');

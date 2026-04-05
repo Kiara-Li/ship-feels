@@ -428,6 +428,15 @@ body {
   color: var(--violet-800);
 }
 
+.delete-confirm-ok--danger {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #dc2626;
+}
+
+.delete-confirm-ok--danger:hover {
+  background: rgba(254, 226, 226, 0.8);
+}
+
 .overlay__backdrop {
   position: absolute;
   inset: 0;
@@ -687,6 +696,41 @@ body {
   border: 2px solid var(--zinc-400);
   border-radius: 9999px;
   color: var(--zinc-500);
+}
+
+.editor-add-row--link {
+  cursor: default;
+  gap: 0.5rem;
+}
+
+.editor-add-row--link:hover {
+  color: var(--zinc-600);
+}
+
+.editor-add-row--link .editor-add-row__left {
+  flex-shrink: 0;
+}
+
+.editor-link-input {
+  flex: 1 1 0;
+  min-width: 0;
+  border: none;
+  border-radius: 0.35rem;
+  padding: 0.2rem 0.25rem;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.55);
+  font: inherit;
+  font-size: 15px;
+  color: var(--zinc-800);
+  outline: none;
+}
+
+.editor-link-input::placeholder {
+  color: var(--zinc-400);
+}
+
+.editor-link-input:focus {
+  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.35);
 }
 
 .editor-image-slots {
@@ -1371,7 +1415,11 @@ body.export-mode .page-overlay--folder-detail {
 .folder-export-capture {
   position: relative;
   min-width: 0;
-  overflow: hidden;
+  /* Let content define height so .folder-detail-main can scroll; flex-shrink was clipping
+     the whole list to the viewport and blocking touch/wheel scroll on the main scroller. */
+  flex-shrink: 0;
+  width: 100%;
+  overflow: visible;
 }
 
 .folder-export-emoji-bg {
@@ -1576,8 +1624,11 @@ body.export-mode #folder-detail-cards .card__quote {
 .folder-detail-main {
   box-sizing: border-box;
   height: 100%;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   padding: calc(3.5rem + 1rem) 1rem 1.25rem;
   display: flex;
   flex-direction: column;
@@ -1780,5 +1831,181 @@ body.export-mode #folder-detail-cards .card__quote {
 
 .folder-card-grip:active {
   cursor: grabbing;
+}
+
+/* —— Saved overlay —— */
+.saved-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.saved-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  animation: saved-backdrop-in 200ms ease forwards;
+}
+
+.saved-overlay__card {
+  position: relative;
+  z-index: 1;
+  width: min(20rem, 100%);
+  padding: 2rem 1.5rem 1.5rem;
+  border-radius: 1.25rem;
+  background: rgba(255, 253, 254, 0.96);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(243, 218, 229, 0.5);
+  text-align: center;
+  animation: saved-card-in 280ms ease-out 50ms both;
+}
+
+.saved-overlay__card.is-dismissing {
+  animation: saved-card-out 180ms ease-in forwards;
+}
+
+.saved-overlay__check {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0 auto 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--violet-100);
+  color: var(--violet-600);
+  animation: saved-check-pop 220ms cubic-bezier(0.34, 1.56, 0.64, 1) 330ms both;
+}
+
+.saved-overlay__check svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.saved-overlay__title {
+  margin: 0 0 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--zinc-900);
+}
+
+.saved-overlay__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.saved-overlay__btn {
+  padding: 0.7rem 1rem;
+  border-radius: 0.75rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  opacity: 0;
+  animation: saved-btn-in 200ms ease-out forwards;
+}
+
+.saved-overlay__btn--share {
+  width: 100%;
+  border: none;
+  background: var(--violet-600);
+  color: var(--white);
+  animation-delay: 380ms;
+}
+
+.saved-overlay__btn--share:hover {
+  background: var(--violet-700);
+}
+
+.saved-overlay__btn--list,
+.saved-overlay__btn--done {
+  flex: 1;
+  border: 1px solid rgba(228, 228, 231, 0.85);
+  background: rgba(244, 244, 245, 0.85);
+  color: var(--zinc-800);
+}
+
+.saved-overlay__btn--list { animation-delay: 440ms; }
+.saved-overlay__btn--done { animation-delay: 500ms; }
+
+.saved-overlay__btn--list:hover,
+.saved-overlay__btn--done:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.saved-overlay__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@keyframes saved-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 0.5; }
+}
+
+@keyframes saved-card-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes saved-check-pop {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+
+@keyframes saved-btn-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes saved-card-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(24px); }
+}
+
+/* —— Tag autocomplete —— */
+.tag-suggest {
+  max-height: 9rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: 0.35rem;
+  border-radius: 0.65rem;
+  background: rgba(255, 253, 254, 0.96);
+  border: 1px solid rgba(243, 218, 229, 0.7);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-overflow-scrolling: touch;
+}
+
+.tag-suggest[hidden] {
+  display: none !important;
+}
+
+.tag-suggest__item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.85rem;
+  border: none;
+  border-bottom: 1px solid rgba(243, 218, 229, 0.3);
+  background: transparent;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--violet-800);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tag-suggest__item:last-child {
+  border-bottom: none;
+}
+
+.tag-suggest__item:hover,
+.tag-suggest__item:active {
+  background: var(--violet-100);
 }
 

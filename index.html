@@ -264,6 +264,26 @@
               </div>
             </div>
             <div class="editor-block">
+              <div class="editor-add-row editor-add-row--link">
+                <span class="editor-add-row__left">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                    <path d="M10 13a5 5 0 0 1 0-7l1-1a5 5 0 0 1 7 7l-1 1" />
+                    <path d="M14 11a5 5 0 0 1 0 7l-1 1a5 5 0 0 1-7-7l1-1" />
+                  </svg>
+                  <span data-i18n="addLink">参考链接</span>
+                </span>
+                <input
+                  type="text"
+                  id="editor-source-url"
+                  class="editor-link-input"
+                  inputmode="url"
+                  autocomplete="off"
+                  data-i18n-placeholder="addLinkPh"
+                  placeholder="粘贴含时间参数的视频链接…"
+                />
+              </div>
+            </div>
+            <div class="editor-block">
               <button type="button" class="editor-add-row" id="editor-add-image">
                 <span class="editor-add-row__left">
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
@@ -356,6 +376,18 @@
               <div class="folder-item-btn__meta">推荐原著为漫画</div>
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete confirmation modal -->
+    <div class="overlay overlay--sort" id="delete-confirm-overlay" aria-hidden="true">
+      <div class="overlay__backdrop delete-confirm-backdrop"></div>
+      <div class="sort-modal delete-confirm-modal" role="alertdialog" aria-modal="true">
+        <p class="delete-confirm-msg sort-modal__title"></p>
+        <div class="sort-modal__list">
+          <button type="button" class="sort-modal__opt delete-confirm-ok delete-confirm-ok--danger"></button>
+          <button type="button" class="sort-modal__opt delete-confirm-cancel"></button>
         </div>
       </div>
     </div>
