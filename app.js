@@ -49,6 +49,11 @@
       folderShare: '分享',
       storyEpisodePh: '第1季 第1集 or S1E1',
       storyTimePh: '12:34',
+      novelVolPh: '卷 e.g. 上册 / Vol.1',
+      novelChapterPh: '章 / 节编号 e.g. 12',
+      routePh: '路线名',
+      endingPh: '结局名',
+      quoteParagraphPh: '输入段落正文（将作为主页卡片首图展示）',
       sortModalTitle: '排序方式',
       sortRealTime: '现实编辑时间',
       sortStory: '原著时间线',
@@ -59,6 +64,17 @@
       deleteConfirmOk: '删除',
       deleteConfirmCancel: '取消',
       savedTitle: '嗑点已记录',
+      textCoverEmpty: '（暂无正文）',
+      cpTitleAria: '点按管理角色，长按编辑 CP 名称',
+      cpRosterTitle: 'CP / 角色',
+      rosterAddItem: '添加',
+      rosterEmojiPh: '表情',
+      rosterNamePh: '名称',
+      rosterColor: '颜色',
+      quoteFromEmpty: '点按顶部 CP 名管理角色与分组',
+      rosterGroupCpPh: '栏目标题，如填写 CP 名称',
+      rosterGroupFriendsPh: '栏目标题，如：朋友',
+      rosterGroupOthersPh: '栏目标题，如：其他',
     },
     en: {
       home: 'Home',
@@ -105,11 +121,27 @@
       folderShare: 'Share',
       storyEpisodePh: 'S1E1 or season / episode',
       storyTimePh: '12:34',
+      novelVolPh: 'Volume e.g. Vol.1',
+      novelChapterPh: 'Chapter no. e.g. 12',
+      routePh: 'Route',
+      endingPh: 'Ending name',
+      quoteParagraphPh: 'Paragraph (shown as the card cover on home)',
       folderEmojiBg: 'Background pattern',
       deleteConfirmMsg: 'Delete this moment?',
       deleteConfirmOk: 'Delete',
       deleteConfirmCancel: 'Cancel',
       savedTitle: 'Ship moment saved',
+      textCoverEmpty: '(No text yet)',
+      cpTitleAria: 'Tap to manage characters, long-press to edit CP name',
+      cpRosterTitle: 'CP / characters',
+      rosterAddItem: 'Add',
+      rosterEmojiPh: 'Emoji',
+      rosterNamePh: 'Name',
+      rosterColor: 'Color',
+      quoteFromEmpty: 'Tap the CP name at the top to manage characters',
+      rosterGroupCpPh: 'Section title, e.g. CP name',
+      rosterGroupFriendsPh: 'Section title, e.g. Friends',
+      rosterGroupOthersPh: 'Section title, e.g. Others',
     },
   };
 
@@ -157,9 +189,27 @@
     'https://images.unsplash.com/photo-1556139943-4bdca53adf1e?w=400',
   ];
 
+  function defaultCpRoster() {
+    return {
+      groups: [
+        {
+          key: 'pair',
+          title: '主角',
+          items: [
+            { id: 1, name: '角色A', emoji: '', color: '#BFDBFE' },
+            { id: 2, name: '角色B', emoji: '', color: '#FBCFE8' },
+          ],
+        },
+        { key: 'friends', title: '朋友', items: [] },
+        { key: 'others', title: '其他', items: [] },
+      ],
+    };
+  }
+
   var state = {
     currentLang: 'zh',
     cpName: 'CP Name',
+    cpRoster: defaultCpRoster(),
     editingName: false,
     cards: SAMPLE_CARDS.slice(),
     folders: [
@@ -174,7 +224,7 @@
     selectedTemplate: '图文',
     editorImages: [],
     pendingImageType: 'full',
-    selectedChar: null,
+    editorQuoteFromIds: [],
     pendingCardIdForPicker: null,
     editingCardId: null,
     isExportMode: false,
@@ -188,6 +238,9 @@
   }
 
   var dom = {};
+  var cpTitlePressTimer = null;
+  var cpTitleLongPress = false;
+  var cpRosterBodyBound = false;
 
   function t(k) {
     var L = TEXT[state.currentLang] || TEXT.zh;
@@ -202,6 +255,10 @@
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
       var k = el.getAttribute('data-i18n-placeholder');
       if (k && t(k)) el.placeholder = t(k);
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (el) {
+      var k = el.getAttribute('data-i18n-aria');
+      if (k && t(k)) el.setAttribute('aria-label', t(k));
     });
     var map = {
       'search-page-title': 'searchTitle',
@@ -259,6 +316,52 @@
     if (feb) feb.setAttribute('aria-label', t('folderEmojiBg'));
     var febd = $('folder-emoji-sheet-backdrop');
     if (febd) febd.setAttribute('aria-label', t('closeOverlay'));
+    applyEditorTemplateStrings();
+  }
+
+  function getCardTemplate(card) {
+    var tpl = card && card.template;
+    if (tpl === '文' || tpl === '图' || tpl === '图文') return tpl;
+    return '图文';
+  }
+
+  function syncEditorTemplateUI() {
+    var tpl = state.selectedTemplate;
+    if (dom.editorPanel) {
+      dom.editorPanel.classList.remove('tpl-图文', 'tpl-文', 'tpl-图');
+      if (tpl === '文') dom.editorPanel.classList.add('tpl-文');
+      else if (tpl === '图') dom.editorPanel.classList.add('tpl-图');
+      else dom.editorPanel.classList.add('tpl-图文');
+    }
+    if (dom.editorQuote) {
+      if (tpl === '文') {
+        dom.editorQuote.rows = 10;
+        dom.editorQuote.classList.add('editor-quote-input--paragraph');
+      } else {
+        dom.editorQuote.rows = 2;
+        dom.editorQuote.classList.remove('editor-quote-input--paragraph');
+      }
+    }
+    applyEditorTemplateStrings();
+  }
+
+  function applyEditorTemplateStrings() {
+    var tpl = state.selectedTemplate;
+    if (dom.editorEpisode && dom.editorTimecode) {
+      if (tpl === '文') {
+        dom.editorEpisode.placeholder = t('novelVolPh');
+        dom.editorTimecode.placeholder = t('novelChapterPh');
+      } else if (tpl === '图') {
+        dom.editorEpisode.placeholder = t('routePh');
+        dom.editorTimecode.placeholder = t('endingPh');
+      } else {
+        dom.editorEpisode.placeholder = t('storyEpisodePh');
+        dom.editorTimecode.placeholder = t('storyTimePh');
+      }
+    }
+    if (dom.editorQuote) {
+      dom.editorQuote.placeholder = tpl === '文' ? t('quoteParagraphPh') : t('quotePh');
+    }
   }
 
   function loadState() {
@@ -269,6 +372,7 @@
       if (d.cards && d.cards.length) state.cards = d.cards;
       if (d.folders && d.folders.length) state.folders = d.folders;
       if (d.cpName) state.cpName = d.cpName;
+      if (d.cpRoster && d.cpRoster.groups && d.cpRoster.groups.length) state.cpRoster = d.cpRoster;
       if (d.currentLang === 'zh' || d.currentLang === 'en') state.currentLang = d.currentLang;
     } catch (e) {}
   }
@@ -281,6 +385,7 @@
           cards: state.cards,
           folders: state.folders,
           cpName: state.cpName,
+          cpRoster: state.cpRoster,
           currentLang: state.currentLang,
         })
       );
@@ -442,6 +547,107 @@
     return null;
   }
 
+  function ensureCpRosterShape() {
+    var def = defaultCpRoster();
+    if (!state.cpRoster || !Array.isArray(state.cpRoster.groups)) {
+      state.cpRoster = def;
+      return;
+    }
+    for (var g = 0; g < 3; g++) {
+      if (!state.cpRoster.groups[g]) {
+        state.cpRoster.groups[g] = def.groups[g];
+        continue;
+      }
+      if (!state.cpRoster.groups[g].items) state.cpRoster.groups[g].items = [];
+      if (typeof state.cpRoster.groups[g].title !== 'string') {
+        state.cpRoster.groups[g].title = def.groups[g].title;
+      }
+    }
+  }
+
+  function migrateCardsQuoteFrom() {
+    state.cards = state.cards.map(function (c) {
+      if (Array.isArray(c.quoteFromIds)) {
+        var o = Object.assign({}, c);
+        delete o.selectedChar;
+        return o;
+      }
+      var ids = [];
+      if (c.selectedChar === 'A') ids = [1];
+      else if (c.selectedChar === 'B') ids = [2];
+      else if (c.selectedChar === 'AB' || c.selectedChar === 'both') ids = [1, 2];
+      var out = Object.assign({}, c);
+      delete out.selectedChar;
+      out.quoteFromIds = ids;
+      return out;
+    });
+  }
+
+  function nextCpRosterId() {
+    var max = 0;
+    state.cpRoster.groups.forEach(function (gr) {
+      (gr.items || []).forEach(function (it) {
+        var n = typeof it.id === 'number' ? it.id : parseInt(it.id, 10);
+        if (!isNaN(n) && n > max) max = n;
+      });
+    });
+    return max + 1;
+  }
+
+  function findRosterItemById(id) {
+    for (var gi = 0; gi < state.cpRoster.groups.length; gi++) {
+      var items = state.cpRoster.groups[gi].items || [];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].id == id) return items[i];
+      }
+    }
+    return null;
+  }
+
+  function sanitizeQuoteFromIds(ids) {
+    return (ids || []).filter(function (id, j, a) {
+      return findRosterItemById(id) && a.indexOf(id) === j;
+    });
+  }
+
+  function quoteFromTagTextColor(bgHex) {
+    var h = String(bgHex || '').replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    if (h.length !== 6) return '#3f3f46';
+    var r = parseInt(h.slice(0, 2), 16);
+    var g = parseInt(h.slice(2, 4), 16);
+    var b = parseInt(h.slice(4, 6), 16);
+    function c(x) {
+      x = Math.max(0, Math.min(255, Math.round(x)));
+      var s = x.toString(16);
+      return s.length < 2 ? '0' + s : s;
+    }
+    return '#' + c(r * 0.42) + c(g * 0.42) + c(b * 0.42);
+  }
+
+  function quoteFromTagsHtml(card) {
+    var ids = card.quoteFromIds || [];
+    if (!ids.length) return '';
+    var parts = [];
+    for (var i = 0; i < ids.length; i++) {
+      var it = findRosterItemById(ids[i]);
+      if (!it) continue;
+      var bg = it.color || '#e4e4e7';
+      var fg = quoteFromTagTextColor(bg);
+      var label = (it.emoji ? it.emoji + ' ' : '') + (it.name || '');
+      parts.push(
+        '<span class="card__quote-from-tag" style="background-color:' +
+          escapeHtml(bg) +
+          ';color:' +
+          escapeHtml(fg) +
+          '">' +
+          escapeHtml(label) +
+          '</span>'
+      );
+    }
+    return parts.join('');
+  }
+
   function tagsHtml(tags) {
     return (tags || [])
       .map(function (tag) {
@@ -458,7 +664,8 @@
     '<svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.25"/><circle cx="15" cy="6" r="1.25"/><circle cx="9" cy="12" r="1.25"/><circle cx="15" cy="12" r="1.25"/><circle cx="9" cy="18" r="1.25"/><circle cx="15" cy="18" r="1.25"/></svg>';
 
   function cardShellTall(card, innerTopRight, extraClass, folderBodySnippet) {
-    var ec = extraClass ? ' ' + extraClass : '';
+    var tpl = getCardTemplate(card);
+    var ec = (extraClass ? ' ' + extraClass : '') + (tpl === '文' ? ' card--text-tpl' : '');
     var ariaDel = escapeHtml(t('delete'));
     var snippet = '';
     if (folderBodySnippet) {
@@ -467,6 +674,30 @@
         snippet = '<p class="card__body-snippet">' + escapeHtml(bt) + '</p>';
       }
     }
+    var mediaHtml;
+    if (tpl === '文') {
+      var qt = (card.quote || '').trim();
+      mediaHtml =
+        '<div class="card__image card__image--text-cover">' +
+        '<p class="card__text-cover-text">' +
+        (qt ? escapeHtml(qt) : '<span class="card__text-cover-empty">' + escapeHtml(t('textCoverEmpty')) + '</span>') +
+        '</p></div>';
+    } else {
+      var imgSrc = card.image || PLACEHOLDER_IMAGES[0];
+      mediaHtml =
+        '<div class="card__image card__image--photo"><img src="' +
+        escapeHtml(imgSrc) +
+        '" alt="" loading="lazy" draggable="false"/></div>';
+    }
+    var quoteHtml = '';
+    if (tpl !== '文') {
+      quoteHtml =
+        '<p class="card__quote"><span class="q" aria-hidden="true">“</span>' +
+        escapeHtml(card.quote || '') +
+        '<span class="q" aria-hidden="true">”</span></p>';
+    }
+    var qfHtml = quoteFromTagsHtml(card);
+    var qfRow = qfHtml ? '<div class="card__quote-from-row">' + qfHtml + '</div>' : '';
     return (
       '<article class="card card--tall' +
       ec +
@@ -481,14 +712,11 @@
       '">' +
       CLOSE_SVG +
       '</button>' +
-      '<div class="card__image card__image--photo"><img src="' +
-      escapeHtml(card.image) +
-      '" alt="" loading="lazy" draggable="false"/></div>' +
+      mediaHtml +
       '<div class="card__body">' +
-      '<p class="card__quote"><span class="q" aria-hidden="true">“</span>' +
-      escapeHtml(card.quote) +
-      '<span class="q" aria-hidden="true">”</span></p>' +
+      quoteHtml +
       snippet +
+      qfRow +
       '<div class="card__tags">' +
       tagsHtml(card.tags) +
       '</div></div></article>'
@@ -744,65 +972,182 @@
     }
   }
 
+  function sanitizePngBasename(raw, fallback) {
+    var s = String(raw == null ? '' : raw)
+      .replace(/[\\/:*?"<>|]+/g, '_')
+      .trim()
+      .slice(0, 48);
+    return s || fallback || 'export';
+  }
+
+  // html2canvas: folder capture is lifted from its parent; single-card wrap is body-only and removed after.
+  function captureAndDownloadPng(el, downloadBaseName) {
+    if (!el || typeof html2canvas !== 'function') return;
+
+    var parent = el.parentNode;
+    var wasLifted = !!(parent && parent !== document.body);
+    var placeholder = null;
+
+    if (wasLifted) {
+      var nextSib = el.nextSibling;
+      placeholder = document.createElement('div');
+      placeholder.style.display = 'none';
+      parent.insertBefore(placeholder, nextSib);
+      var w = el.offsetWidth;
+      el.style.position = 'absolute';
+      el.style.top = '-99999px';
+      el.style.left = '0';
+      el.style.width = w + 'px';
+      el.style.maxWidth = 'none';
+      el.style.height = 'auto';
+      el.style.overflow = 'visible';
+      document.body.appendChild(el);
+    } else {
+      el.style.position = 'absolute';
+      el.style.top = '-99999px';
+      el.style.left = '0';
+      if (!el.style.width) el.style.width = '360px';
+      el.style.maxWidth = 'none';
+      el.style.height = 'auto';
+      el.style.overflow = 'visible';
+    }
+
+    var safeBase = sanitizePngBasename(downloadBaseName, 'export');
+
+    function cleanup() {
+      el.style.position = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.maxWidth = '';
+      el.style.height = '';
+      el.style.overflow = '';
+      if (wasLifted && parent && placeholder) {
+        parent.insertBefore(el, placeholder);
+        placeholder.remove();
+      } else if (el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    }
+
+    html2canvas(el, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' })
+      .then(function (canvas) {
+        cleanup();
+        var a = document.createElement('a');
+        a.download = safeBase + '.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+      })
+      .catch(function () {
+        cleanup();
+      });
+  }
+
   function runFolderExportImage() {
     var el = $('folder-export-capture');
     if (!el || typeof html2canvas !== 'function') return;
     syncFolderExportStatic();
     syncExportEmojiBg();
+    var folder = getSelectedFolder();
+    var base =
+      folder && folder.name
+        ? sanitizePngBasename(folder.name, 'folder')
+        : 'folder';
+    captureAndDownloadPng(el, base);
+  }
 
-    // Lift el out of the scrollable container so html2canvas sees the full height.
-    var parent = el.parentNode;
-    var nextSib = el.nextSibling;
-    var placeholder = document.createElement('div');
-    placeholder.style.display = 'none';
-    parent.insertBefore(placeholder, nextSib);
+  function downloadCapturedPdfFromElement(el, downloadBaseName) {
+    if (!el || typeof html2canvas !== 'function') return;
+    var JsPdf = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!JsPdf) return;
 
-    var w = el.offsetWidth;
     el.style.position = 'absolute';
     el.style.top = '-99999px';
     el.style.left = '0';
-    el.style.width = w + 'px';
     el.style.maxWidth = 'none';
     el.style.height = 'auto';
     el.style.overflow = 'visible';
-    document.body.appendChild(el);
 
-    html2canvas(el, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' }).then(function (canvas) {
-      // Restore el to original location.
+    var safeBase = sanitizePngBasename(downloadBaseName, 'export');
+
+    function cleanup() {
       el.style.position = '';
       el.style.top = '';
       el.style.left = '';
-      el.style.width = '';
       el.style.maxWidth = '';
       el.style.height = '';
       el.style.overflow = '';
-      parent.insertBefore(el, placeholder);
-      placeholder.remove();
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }
 
-      var a = document.createElement('a');
-      var folder = getSelectedFolder();
-      var base =
-        folder && folder.name
-          ? String(folder.name)
-              .replace(/[\\/:*?"<>|]+/g, '_')
-              .trim()
-              .slice(0, 48) || 'folder'
-          : 'folder';
-      a.download = base + '.png';
-      a.href = canvas.toDataURL('image/png');
-      a.click();
-    }).catch(function () {
-      // Restore even on failure.
-      el.style.position = '';
-      el.style.top = '';
-      el.style.left = '';
-      el.style.width = '';
-      el.style.maxWidth = '';
-      el.style.height = '';
-      el.style.overflow = '';
-      parent.insertBefore(el, placeholder);
-      placeholder.remove();
-    });
+    html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: null,
+    })
+      .then(function (canvas) {
+        cleanup();
+        var imgData = canvas.toDataURL('image/png', 0.95);
+        var cw = canvas.width;
+        var ch = canvas.height;
+        var pdf = new JsPdf({
+          unit: 'pt',
+          format: 'a4',
+          orientation: ch >= cw ? 'portrait' : 'landscape',
+          compress: true,
+        });
+        var pageW = pdf.internal.pageSize.getWidth();
+        var pageH = pdf.internal.pageSize.getHeight();
+        var margin = 44;
+        var maxW = pageW - 2 * margin;
+        var maxH = pageH - 2 * margin;
+        var ratio = cw / ch;
+        var imgW = maxW;
+        var imgH = imgW / ratio;
+        if (imgH > maxH) {
+          imgH = maxH;
+          imgW = imgH * ratio;
+        }
+        var x = margin + (maxW - imgW) / 2;
+        var y = margin + (maxH - imgH) / 2;
+        pdf.addImage(imgData, 'PNG', x, y, imgW, imgH);
+        pdf.save(safeBase + '.pdf');
+      })
+      .catch(function () {
+        cleanup();
+      });
+  }
+
+  function exportCardAsPdf(card) {
+    if (!card) return;
+    var text = card.quote || '';
+    if (typeof html2canvas !== 'function') {
+      if (navigator.share) {
+        navigator.share({ text: text }).catch(function () {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).catch(function () {});
+      }
+      return;
+    }
+    var wrap = document.createElement('div');
+    wrap.className = 'single-card-export-wrap';
+    var pairItems = (state.cpRoster.groups[0] && state.cpRoster.groups[0].items) || [];
+    var ec0 = pairItems[0] && pairItems[0].color;
+    var ec1 = pairItems[1] && pairItems[1].color;
+    var c0 = ec0 && /^#[0-9A-Fa-f]{6}$/.test(ec0) ? ec0 : '#BFDBFE';
+    var c1 = ec1 && /^#[0-9A-Fa-f]{6}$/.test(ec1) ? ec1 : '#FBCFE8';
+    wrap.style.background = 'linear-gradient(160deg, ' + c0 + ' 0%, ' + c1 + ' 100%)';
+    wrap.innerHTML =
+      '<div class="single-card-export-frame">' + cardShellTall(card, '', '', true) + '</div>';
+    document.body.appendChild(wrap);
+    var base = sanitizePngBasename(card.quote, 'moment-' + card.id);
+    var JsPdf = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!JsPdf) {
+      captureAndDownloadPng(wrap, base);
+      return;
+    }
+    downloadCapturedPdfFromElement(wrap, base);
   }
 
   function renderFolderDetail() {
@@ -1049,12 +1394,9 @@
 
     btnShare.addEventListener('click', function () {
       dismiss();
-      var text = card.quote || '';
-      if (navigator.share) {
-        navigator.share({ text: text }).catch(function () {});
-      } else if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).catch(function () {});
-      }
+      setTimeout(function () {
+        exportCardAsPdf(card);
+      }, 200);
     });
 
     btnList.addEventListener('click', function () {
@@ -1207,7 +1549,203 @@
     dom.editorOverlay.classList.toggle('is-open', open);
     dom.editorOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
     if (!open && dom.imageTypePanel) dom.imageTypePanel.hidden = true;
-    if (open && dom.editorQuote) dom.editorQuote.focus();
+    if (open) {
+      syncEditorTemplateUI();
+      renderEditorQuoteFromChips();
+      if (dom.editorQuote) dom.editorQuote.focus();
+    }
+  }
+
+  function setCpRosterOpen(open) {
+    if (!dom.cpRosterOverlay) return;
+    dom.cpRosterOverlay.classList.toggle('is-open', open);
+    dom.cpRosterOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (open) {
+      if (state.cpRoster.groups[0]) state.cpRoster.groups[0].title = state.cpName;
+      renderCpRosterEditor();
+    }
+  }
+
+  function renderCpRosterEditor() {
+    if (!dom.cpRosterBody) return;
+    var groupTitlePh = [t('rosterGroupCpPh'), t('rosterGroupFriendsPh'), t('rosterGroupOthersPh')];
+    dom.cpRosterBody.innerHTML = state.cpRoster.groups
+      .map(function (gr, gi) {
+        var titlePh = groupTitlePh[gi] != null ? groupTitlePh[gi] : groupTitlePh[2];
+        var items = (gr.items || [])
+          .map(function (it) {
+            var col = it.color && /^#[0-9A-Fa-f]{6}$/.test(it.color) ? it.color : '#DDD6FE';
+            return (
+              '<div class="cp-roster-item" data-item-id="' +
+              it.id +
+              '">' +
+              '<input type="text" class="cp-roster-emoji" maxlength="12" placeholder="' +
+              escapeHtml(t('rosterEmojiPh')) +
+              '" value="' +
+              escapeHtml(it.emoji || '') +
+              '" aria-label="' +
+              escapeHtml(t('rosterEmojiPh')) +
+              '"/>' +
+              '<input type="text" class="cp-roster-name" placeholder="' +
+              escapeHtml(t('rosterNamePh')) +
+              '" value="' +
+              escapeHtml(it.name || '') +
+              '"/>' +
+              '<input type="color" class="cp-roster-color" value="' +
+              escapeHtml(col) +
+              '" aria-label="' +
+              escapeHtml(t('rosterColor')) +
+              '"/>' +
+              '<button type="button" class="cp-roster-del" data-del-item="' +
+              it.id +
+              '" aria-label="' +
+              escapeHtml(t('delete')) +
+              '">×</button></div>'
+            );
+          })
+          .join('');
+        return (
+          '<section class="cp-roster-group" data-group-idx="' +
+          gi +
+          '">' +
+          '<input type="text" class="cp-roster-group-title" placeholder="' +
+          escapeHtml(titlePh) +
+          '" value="' +
+          escapeHtml(gr.title || '') +
+          '" />' +
+          '<div class="cp-roster-items">' +
+          items +
+          '</div>' +
+          '<button type="button" class="cp-roster-add" data-add-group="' +
+          gi +
+          '">+ ' +
+          escapeHtml(t('rosterAddItem')) +
+          '</button></section>'
+        );
+      })
+      .join('');
+  }
+
+  function removeCpRosterItem(id) {
+    state.cpRoster.groups.forEach(function (gr) {
+      gr.items = (gr.items || []).filter(function (it) {
+        return it.id !== id;
+      });
+    });
+    state.cards = state.cards.map(function (c) {
+      var q = (c.quoteFromIds || []).filter(function (x) {
+        return x !== id;
+      });
+      return Object.assign({}, c, { quoteFromIds: q });
+    });
+    state.editorQuoteFromIds = state.editorQuoteFromIds.filter(function (x) {
+      return x !== id;
+    });
+  }
+
+  function bindCpRosterBody() {
+    if (!dom.cpRosterBody || cpRosterBodyBound) return;
+    cpRosterBodyBound = true;
+    dom.cpRosterBody.addEventListener('input', function (e) {
+      var el = e.target;
+      var itemRow = el.closest('.cp-roster-item');
+      if (itemRow) {
+        var id = parseInt(itemRow.getAttribute('data-item-id'), 10);
+        if (isNaN(id)) return;
+        var it = findRosterItemById(id);
+        if (!it) return;
+        if (el.classList.contains('cp-roster-emoji')) it.emoji = el.value;
+        else if (el.classList.contains('cp-roster-name')) it.name = el.value;
+        else if (el.classList.contains('cp-roster-color')) it.color = el.value;
+        return;
+      }
+      var gEl = el.closest('.cp-roster-group');
+      if (gEl && el.classList.contains('cp-roster-group-title')) {
+        var gi = parseInt(gEl.getAttribute('data-group-idx'), 10);
+        if (!isNaN(gi) && state.cpRoster.groups[gi]) {
+          state.cpRoster.groups[gi].title = el.value;
+          if (gi === 0) {
+            state.cpName = (el.value || '').trim() || t('cpDefault');
+            if (dom.cpTitleBtn) dom.cpTitleBtn.textContent = state.cpName;
+            if (dom.cpTitleInput && !dom.cpTitleInput.hidden) dom.cpTitleInput.value = state.cpName;
+            saveState();
+          }
+        }
+      }
+    });
+    dom.cpRosterBody.addEventListener('click', function (e) {
+      var addBtn = e.target.closest('[data-add-group]');
+      if (addBtn && dom.cpRosterBody.contains(addBtn)) {
+        var gi = parseInt(addBtn.getAttribute('data-add-group'), 10);
+        if (isNaN(gi) || !state.cpRoster.groups[gi]) return;
+        state.cpRoster.groups[gi].items = state.cpRoster.groups[gi].items || [];
+        state.cpRoster.groups[gi].items.push({
+          id: nextCpRosterId(),
+          name: '',
+          emoji: '',
+          color: '#DDD6FE',
+        });
+        renderCpRosterEditor();
+        saveState();
+        return;
+      }
+      var delBtn = e.target.closest('[data-del-item]');
+      if (delBtn && dom.cpRosterBody.contains(delBtn)) {
+        var did = parseInt(delBtn.getAttribute('data-del-item'), 10);
+        if (isNaN(did)) return;
+        removeCpRosterItem(did);
+        renderCpRosterEditor();
+        saveState();
+        renderEditorQuoteFromChips();
+        renderFeed();
+        renderSearchResults();
+        if (state.selectedTagForDetail) renderTagDetail();
+        if (state.selectedFolderId != null) renderFolderDetail();
+      }
+    });
+  }
+
+  function renderEditorQuoteFromChips() {
+    if (!dom.editorQuoteFromWrap) return;
+    state.editorQuoteFromIds = sanitizeQuoteFromIds(state.editorQuoteFromIds);
+    var html = state.cpRoster.groups
+      .map(function (gr) {
+        var chips = (gr.items || [])
+          .map(function (it) {
+            var sel = state.editorQuoteFromIds.indexOf(it.id) !== -1;
+            var bg = (it.color && /^#[0-9A-Fa-f]{6}$/.test(it.color) ? it.color : '#e4e4e7');
+            var fg = quoteFromTagTextColor(bg);
+            var lab = (it.emoji ? it.emoji + ' ' : '') + (it.name || '…');
+            return (
+              '<button type="button" class="char-btn char-btn--quote-from' +
+              (sel ? ' is-selected' : '') +
+              '" data-quote-from-id="' +
+              it.id +
+              '" aria-pressed="' +
+              (sel ? 'true' : 'false') +
+              '" style="--qf-bg:' +
+              escapeHtml(bg) +
+              ';--qf-fg:' +
+              escapeHtml(fg) +
+              '">' +
+              escapeHtml(lab) +
+              '</button>'
+            );
+          })
+          .join('');
+        if (!chips) return '';
+        return (
+          '<div class="editor-qf-block">' +
+          '<span class="editor-qf-block__label">' +
+          escapeHtml(gr.title || '') +
+          '</span><div class="char-row char-row--wrap">' +
+          chips +
+          '</div></div>'
+        );
+      })
+      .join('');
+    dom.editorQuoteFromWrap.innerHTML =
+      html || '<p class="editor-qf-empty">' + escapeHtml(t('quoteFromEmpty')) + '</p>';
   }
 
   function resetEditorDraft() {
@@ -1219,35 +1757,41 @@
     if (dom.editorEpisode) dom.editorEpisode.value = '';
     if (dom.editorTimecode) dom.editorTimecode.value = '';
     if (dom.editorSourceUrl) dom.editorSourceUrl.value = '';
-    state.selectedChar = null;
-    document.querySelectorAll('.char-btn').forEach(function (b) {
-      b.classList.remove('is-selected');
-    });
+    state.editorQuoteFromIds = [];
     renderEditorImages();
     closeTagSuggest();
     syncEditor();
     resizeEditorTextarea();
+    renderEditorQuoteFromChips();
   }
 
   function openEditorForCard(cardId) {
     var card = getCardById(cardId);
     if (!card || !dom.editorQuote || !dom.editorBody) return;
+    var tplOpen = getCardTemplate(card);
     state.editingCardId = card.id;
-    state.editorImages = (card.images && card.images.length
-      ? card.images
-      : card.image
-      ? [{ src: card.image, type: card.imageRatio === 'subtitle' ? 'subtitle' : 'full' }]
-      : []
-    ).map(function (img) {
-      if (typeof img === 'string') return { src: img, type: 'full' };
-      return { src: img.src, type: img.type === 'subtitle' ? 'subtitle' : 'full' };
-    });
+    state.selectedTemplate = tplOpen;
+    syncTemplateLabel();
+    if (tplOpen === '文') {
+      state.editorImages = [];
+    } else {
+      state.editorImages = (card.images && card.images.length
+        ? card.images
+        : card.image
+        ? [{ src: card.image, type: card.imageRatio === 'subtitle' ? 'subtitle' : 'full' }]
+        : []
+      ).map(function (img) {
+        if (typeof img === 'string') return { src: img, type: 'full' };
+        return { src: img.src, type: img.type === 'subtitle' ? 'subtitle' : 'full' };
+      });
+    }
     dom.editorQuote.value = card.quote || '';
     dom.editorBody.value =
       card.text || ((card.tags || []).map(function (tg) { return '#' + tg + '#'; }).join(' '));
     if (dom.editorEpisode) dom.editorEpisode.value = card.episode || '';
     if (dom.editorTimecode) dom.editorTimecode.value = card.timecode || '';
-    if (dom.editorSourceUrl) dom.editorSourceUrl.value = card.sourceUrl || '';
+    if (dom.editorSourceUrl) dom.editorSourceUrl.value = tplOpen === '图文' ? card.sourceUrl || '' : '';
+    state.editorQuoteFromIds = sanitizeQuoteFromIds(card.quoteFromIds || []);
     renderEditorImages();
     syncEditor();
     resizeEditorTextarea();
@@ -1435,20 +1979,29 @@
     var ep = dom.editorEpisode ? dom.editorEpisode.value.trim() : '';
     var tc = dom.editorTimecode ? dom.editorTimecode.value.trim() : '';
     var srcUrl = dom.editorSourceUrl ? dom.editorSourceUrl.value.trim() : '';
+    var tpl = state.selectedTemplate;
+    var imagesArr = state.editorImages.map(function (it) {
+      if (typeof it === 'string') return { src: it, type: 'full' };
+      return { src: it.src, type: it.type === 'subtitle' ? 'subtitle' : 'full' };
+    });
+    var imgFirst =
+      (state.editorImages[0] && (state.editorImages[0].src || state.editorImages[0])) ||
+      PLACEHOLDER_IMAGES[0];
+    if (tpl === '文') {
+      imagesArr = [];
+      imgFirst = '';
+    }
     var payload = {
-      image:
-        (state.editorImages[0] && (state.editorImages[0].src || state.editorImages[0])) ||
-        PLACEHOLDER_IMAGES[0],
-      images: state.editorImages.map(function (it) {
-        if (typeof it === 'string') return { src: it, type: 'full' };
-        return { src: it.src, type: it.type === 'subtitle' ? 'subtitle' : 'full' };
-      }),
+      template: tpl,
+      image: imgFirst,
+      images: imagesArr,
       quote: quotation || body.substring(0, 50),
       tags: tags,
       text: body,
       episode: ep,
       timecode: tc,
-      sourceUrl: srcUrl,
+      sourceUrl: tpl === '图文' ? srcUrl : '',
+      quoteFromIds: sanitizeQuoteFromIds(state.editorQuoteFromIds),
     };
     var isNew = state.editingCardId == null;
     var newId;
@@ -1503,17 +2056,41 @@
     renderFolderDetail();
   }
 
-  function bindCpName() {
+  function startCpRename() {
+    state.editingName = true;
+    if (!dom.cpTitleBtn || !dom.cpTitleInput) return;
+    dom.cpTitleBtn.hidden = true;
+    dom.cpTitleInput.hidden = false;
+    dom.cpTitleInput.value = state.cpName;
+    dom.cpTitleInput.focus();
+    dom.cpTitleInput.select();
+  }
+
+  function bindCpTitle() {
     if (dom.cpTitleBtn) {
-      dom.cpTitleBtn.addEventListener('click', function () {
-        state.editingName = true;
-        dom.cpTitleBtn.hidden = true;
-        if (dom.cpTitleInput) {
-          dom.cpTitleInput.hidden = false;
-          dom.cpTitleInput.value = state.cpName;
-          dom.cpTitleInput.focus();
-          dom.cpTitleInput.select();
+      dom.cpTitleBtn.addEventListener('pointerdown', function () {
+        cpTitleLongPress = false;
+        if (cpTitlePressTimer) clearTimeout(cpTitlePressTimer);
+        cpTitlePressTimer = setTimeout(function () {
+          cpTitleLongPress = true;
+          startCpRename();
+        }, 480);
+      });
+      dom.cpTitleBtn.addEventListener('pointerup', function () {
+        if (cpTitlePressTimer) clearTimeout(cpTitlePressTimer);
+        cpTitlePressTimer = null;
+      });
+      dom.cpTitleBtn.addEventListener('pointerleave', function () {
+        if (cpTitlePressTimer) clearTimeout(cpTitlePressTimer);
+        cpTitlePressTimer = null;
+      });
+      dom.cpTitleBtn.addEventListener('click', function (e) {
+        if (cpTitleLongPress) {
+          e.preventDefault();
+          cpTitleLongPress = false;
+          return;
         }
+        setCpRosterOpen(true);
       });
     }
     if (dom.cpTitleInput) {
@@ -1525,6 +2102,8 @@
           dom.cpTitleBtn.textContent = state.cpName;
         }
         state.editingName = false;
+        if (state.cpRoster.groups[0]) state.cpRoster.groups[0].title = state.cpName;
+        if (dom.cpRosterOverlay && dom.cpRosterOverlay.classList.contains('is-open')) renderCpRosterEditor();
         saveState();
       });
       dom.cpTitleInput.addEventListener('keydown', function (e) {
@@ -1550,6 +2129,12 @@
         syncTemplateLabel();
         if ($('folder-picker-heading')) $('folder-picker-heading').textContent = t('pickFolder');
         if (dom.folderPickerOverlay && dom.folderPickerOverlay.classList.contains('is-open')) renderFolderPicker();
+        if (dom.editorOverlay && dom.editorOverlay.classList.contains('is-open')) {
+          renderEditorQuoteFromChips();
+        }
+        if (dom.cpRosterOverlay && dom.cpRosterOverlay.classList.contains('is-open')) {
+          renderCpRosterEditor();
+        }
         saveState();
       });
     });
@@ -1669,6 +2254,27 @@
       });
     if ($('btn-create-folder'))
       $('btn-create-folder').addEventListener('click', createNewFolder);
+
+    if ($('cp-roster-backdrop'))
+      $('cp-roster-backdrop').addEventListener('click', function () {
+        setCpRosterOpen(false);
+        saveState();
+        renderEditorQuoteFromChips();
+        renderFeed();
+        if (state.selectedFolderId != null) renderFolderDetail();
+        renderSearchResults();
+        if (state.selectedTagForDetail) renderTagDetail();
+      });
+    if ($('cp-roster-done'))
+      $('cp-roster-done').addEventListener('click', function () {
+        setCpRosterOpen(false);
+        saveState();
+        renderEditorQuoteFromChips();
+        renderFeed();
+        if (state.selectedFolderId != null) renderFolderDetail();
+        renderSearchResults();
+        if (state.selectedTagForDetail) renderTagDetail();
+      });
 
     if (dom.foldersList)
       dom.foldersList.addEventListener('click', function (e) {
@@ -1853,15 +2459,18 @@
       closeTagSuggest();
     });
 
-    document.querySelectorAll('.char-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var ch = btn.getAttribute('data-char');
-        state.selectedChar = ch;
-        document.querySelectorAll('.char-btn').forEach(function (b) {
-          b.classList.toggle('is-selected', b === btn);
-        });
+    if (dom.editorQuoteFromWrap) {
+      dom.editorQuoteFromWrap.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-quote-from-id]');
+        if (!b || !dom.editorQuoteFromWrap.contains(b)) return;
+        var qid = parseInt(b.getAttribute('data-quote-from-id'), 10);
+        if (isNaN(qid)) return;
+        var ix = state.editorQuoteFromIds.indexOf(qid);
+        if (ix === -1) state.editorQuoteFromIds.push(qid);
+        else state.editorQuoteFromIds.splice(ix, 1);
+        renderEditorQuoteFromChips();
       });
-    });
+    }
     if (dom.editorBody) {
       dom.editorBody.addEventListener('input', function () {
         resizeEditorTextarea();
@@ -1880,6 +2489,7 @@
         var tpl = btn.getAttribute('data-template');
         if (tpl) state.selectedTemplate = tpl;
         syncTemplateLabel();
+        syncEditorTemplateUI();
         setTemplateOpen(false);
       });
     });
@@ -1964,6 +2574,7 @@
     dom.folderDetailCards = $('folder-detail-cards');
     dom.sortOverlay = $('sort-overlay');
     dom.sortBackdrop = $('sort-backdrop');
+    dom.editorPanel = $('editor-panel');
     dom.editorOverlay = $('editor-overlay');
     dom.editorEpisode = $('editor-episode');
     dom.editorTimecode = $('editor-timecode');
@@ -1980,10 +2591,15 @@
     dom.folderPickerOverlay = $('folder-picker-overlay');
     dom.folderPickerList = $('folder-picker-list');
     dom.fileInput = $('editor-file-input');
+    dom.cpRosterOverlay = $('cp-roster-overlay');
+    dom.cpRosterBody = $('cp-roster-body');
+    dom.editorQuoteFromWrap = $('editor-quote-from-wrap');
   }
 
   function init() {
     loadState();
+    ensureCpRosterShape();
+    migrateCardsQuoteFrom();
     cacheDom();
     document.documentElement.lang = state.currentLang === 'zh' ? 'zh-CN' : 'en';
     if (dom.cpTitleBtn) dom.cpTitleBtn.textContent = state.cpName;
@@ -1992,7 +2608,8 @@
     });
     applyUiStrings();
     if (dom.cpTitleBtn) dom.cpTitleBtn.textContent = state.cpName;
-    bindCpName();
+    bindCpTitle();
+    bindCpRosterBody();
     bindLangToggle();
     bindNav();
     bindOverlays();
@@ -2003,6 +2620,7 @@
     bindFolderDrag();
     bindEditor();
     syncTemplateLabel();
+    syncEditorTemplateUI();
     renderFeed();
     renderTagIndex();
     syncEditor();

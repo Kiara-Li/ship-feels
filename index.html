@@ -20,7 +20,7 @@
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <button type="button" class="top-bar__title" id="cp-title-btn" aria-label="编辑 CP 名称">CP Name</button>
+        <button type="button" class="top-bar__title" id="cp-title-btn" data-i18n-aria="cpTitleAria">CP Name</button>
         <input type="text" class="top-bar__title-input" id="cp-title-input" hidden />
         <button type="button" class="icon-btn" id="btn-more" aria-label="更多">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -231,7 +231,7 @@
       <!-- 编辑抽屉 -->
       <div class="overlay" id="editor-overlay" aria-hidden="true">
         <button type="button" class="overlay__backdrop" id="editor-backdrop" aria-label="关闭"></button>
-        <div class="sheet sheet--editor" id="editor-panel" role="dialog" aria-modal="true" aria-labelledby="editor-heading">
+        <div class="sheet sheet--editor tpl-图文" id="editor-panel" role="dialog" aria-modal="true" aria-labelledby="editor-heading">
           <div class="sheet__header">
             <span id="editor-heading" class="visually-hidden">编辑嗑点</span>
             <button type="button" class="sheet__mode" id="editor-mode-btn">
@@ -263,7 +263,7 @@
                 />
               </div>
             </div>
-            <div class="editor-block">
+            <div class="editor-block editor-block--link" id="editor-block-link">
               <div class="editor-add-row editor-add-row--link">
                 <span class="editor-add-row__left">
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
@@ -283,7 +283,7 @@
                 />
               </div>
             </div>
-            <div class="editor-block">
+            <div class="editor-block editor-block--images" id="editor-block-images">
               <button type="button" class="editor-add-row" id="editor-add-image">
                 <span class="editor-add-row__left">
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
@@ -308,13 +308,16 @@
 
             <div class="editor-block">
               <div class="field field--quote">
-                <input type="text" id="editor-quote" data-i18n-placeholder="quotePh" placeholder="在这里输入台词" />
+                <textarea
+                  id="editor-quote"
+                  class="editor-quote-input"
+                  rows="2"
+                  data-i18n-placeholder="quotePh"
+                  placeholder="在这里输入台词"
+                ></textarea>
               </div>
               <p class="field-label" data-i18n="quoteFrom">这句话来自——</p>
-              <div class="char-row">
-                <button type="button" class="char-btn" data-char="A" data-i18n="charA">角色A</button>
-                <button type="button" class="char-btn" data-char="B" data-i18n="charB">角色B</button>
-              </div>
+              <div id="editor-quote-from-wrap" class="editor-quote-from-wrap"></div>
             </div>
 
             <div class="editor-block">
@@ -333,6 +336,18 @@
               <div class="tag-preview" id="editor-tag-preview" hidden></div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- CP 角色管理 -->
+      <div class="overlay overlay--settings" id="cp-roster-overlay" aria-hidden="true">
+        <button type="button" class="overlay__backdrop" id="cp-roster-backdrop" aria-label="关闭"></button>
+        <div class="sheet sheet--settings sheet--cp-roster" id="cp-roster-panel" role="dialog" aria-modal="true" aria-labelledby="cp-roster-heading">
+          <div class="sheet__title-row">
+            <h2 class="sheet__title" id="cp-roster-heading" data-i18n="cpRosterTitle">CP / 角色</h2>
+            <button type="button" class="btn-primary" id="cp-roster-done" data-i18n="folderDone">完成</button>
+          </div>
+          <div class="cp-roster-body" id="cp-roster-body"></div>
         </div>
       </div>
 
@@ -393,6 +408,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

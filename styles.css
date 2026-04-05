@@ -263,6 +263,42 @@ body {
   user-select: none;
 }
 
+.card--tall .card__image--text-cover {
+  height: auto;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border-radius: 1rem 1rem 0 0;
+  background: linear-gradient(145deg, #fdf2f8 0%, #fae8ff 40%, #e0f2fe 100%);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+}
+
+.card__text-cover-text {
+  margin: 0;
+  padding: 1rem 1.05rem;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: var(--zinc-800);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 9.75rem;
+  overflow: hidden;
+}
+
+.card__text-cover-empty {
+  color: var(--zinc-400);
+  font-weight: 400;
+}
+
+.card--text-tpl .card__body {
+  min-height: 132px;
+}
+
 .card--selectable {
   cursor: pointer;
 }
@@ -859,7 +895,8 @@ body {
   padding: 0.75rem 1rem;
 }
 
-.field--quote input {
+.field--quote input,
+.field--quote textarea {
   width: 100%;
   border: none;
   background: transparent;
@@ -867,10 +904,34 @@ body {
   font-size: 16px;
   color: var(--zinc-900);
   outline: none;
+  resize: none;
 }
 
-.field--quote input::placeholder {
+.field--quote textarea {
+  display: block;
+  line-height: 1.45;
+  min-height: 2.75rem;
+  max-height: 5rem;
+}
+
+.field--quote textarea.editor-quote-input--paragraph {
+  min-height: 10rem;
+  max-height: none;
+}
+
+.field--quote input::placeholder,
+.field--quote textarea::placeholder {
   color: var(--zinc-400);
+}
+
+/* Editor template: 文 — 无图、无链接；图 — 无链接 */
+.sheet--editor.tpl-文 .editor-block--images,
+.sheet--editor.tpl-文 .editor-block--link {
+  display: none !important;
+}
+
+.sheet--editor.tpl-图 .editor-block--link {
+  display: none !important;
 }
 
 .field-label {
@@ -882,6 +943,10 @@ body {
 .char-row {
   display: flex;
   gap: 0.75rem;
+}
+
+.char-row--wrap {
+  flex-wrap: wrap;
 }
 
 .char-btn {
@@ -897,6 +962,12 @@ body {
   cursor: pointer;
 }
 
+.char-btn--quote-from {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .char-btn:hover {
   background: #e4e4e7;
 }
@@ -905,6 +976,234 @@ body {
   background: var(--violet-100);
   color: var(--violet-800);
   box-shadow: 0 0 0 2px var(--violet-300);
+}
+
+.char-btn--quote-from:hover:not(.is-selected) {
+  background: var(--zinc-200);
+}
+
+.char-btn.char-btn--quote-from.is-selected {
+  background: var(--qf-bg);
+  color: var(--qf-fg);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--qf-fg) 35%, transparent);
+}
+
+@supports not (background: color-mix(in srgb, white 50%, black)) {
+  .char-btn.char-btn--quote-from.is-selected {
+    box-shadow: 0 0 0 2px var(--qf-fg);
+  }
+}
+
+.editor-quote-from-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.editor-qf-block__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--zinc-500);
+}
+
+.editor-qf-empty {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--zinc-400);
+}
+
+.sheet--cp-roster .cp-roster-body {
+  max-height: min(70vh, 28rem);
+  overflow-y: auto;
+  padding: 0 1.25rem 1.25rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cp-roster-group {
+  margin-bottom: 1.25rem;
+}
+
+.cp-roster-group-title {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--zinc-200);
+  border-radius: 0.5rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.cp-roster-group-title::placeholder {
+  color: var(--zinc-400);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.cp-roster-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cp-roster-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cp-roster-emoji {
+  width: 3rem;
+  flex-shrink: 0;
+  padding: 0.4rem 0.35rem;
+  border: 1px solid var(--zinc-200);
+  border-radius: 0.5rem;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.cp-roster-name {
+  flex: 1;
+  min-width: 5rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--zinc-200);
+  border-radius: 0.5rem;
+  font: inherit;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+}
+
+.cp-roster-color {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.cp-roster-del {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.35rem;
+  background: var(--zinc-100);
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--zinc-500);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.cp-roster-del:hover {
+  background: var(--zinc-200);
+  color: var(--zinc-800);
+}
+
+.cp-roster-add {
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--zinc-100);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--violet-700);
+  cursor: pointer;
+}
+
+.cp-roster-add:hover {
+  background: var(--violet-50);
+}
+
+.top-bar__title {
+  touch-action: manipulation;
+}
+
+.card__quote-from-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.card__quote-from-tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Single-card export: background gradient set in JS from CP 主角栏两角色色 */
+.single-card-export-wrap {
+  box-sizing: border-box;
+  width: 420px;
+  max-width: 100%;
+  padding: 2rem 1.75rem 2.25rem;
+  border-radius: 1.25rem;
+}
+
+.single-card-export-frame {
+  border-radius: 1.125rem;
+  padding: 0;
+  background: transparent;
+}
+
+.single-card-export-frame .card.card--tall {
+  margin: 0;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 14px 48px rgba(15, 23, 42, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  border-radius: 1.125rem;
+  overflow: hidden;
+  border: 1px solid rgba(228, 228, 231, 0.9);
+}
+
+.single-card-export-wrap .card-delete-btn,
+.single-card-export-wrap .card-arrow-btn {
+  display: none !important;
+}
+
+.single-card-export-wrap .card__tags,
+.single-card-export-wrap .card__quote-from-row {
+  display: none !important;
+}
+
+.single-card-export-wrap .card__body-snippet {
+  display: block !important;
+  margin: 0.55rem 0 0;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(228, 228, 231, 0.95);
+  font-size: 0.875rem;
+  line-height: 1.75;
+  color: #52525b;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.single-card-export-wrap .card__quote {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  -webkit-box-orient: unset;
+}
+
+.single-card-export-wrap .card--text-tpl .card__text-cover-text {
+  max-height: none;
 }
 
 .textarea-shell {
@@ -1600,7 +1899,8 @@ body.export-mode #folder-detail-cards .card {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
 }
 
-body.export-mode #folder-detail-cards .card__tags {
+body.export-mode #folder-detail-cards .card__tags,
+body.export-mode #folder-detail-cards .card__quote-from-row {
   display: none !important;
 }
 
@@ -1619,6 +1919,10 @@ body.export-mode #folder-detail-cards .card__quote {
   -webkit-line-clamp: unset;
   line-clamp: unset;
   -webkit-box-orient: unset;
+}
+
+body.export-mode #folder-detail-cards .card__image--text-cover .card__text-cover-text {
+  max-height: none;
 }
 
 .folder-detail-main {
