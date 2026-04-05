@@ -15,14 +15,14 @@
   <body>
     <div class="app">
       <header class="top-bar">
-        <button type="button" class="icon-btn" id="btn-menu" aria-label="菜单">
+        <button type="button" class="icon-btn" id="btn-menu" data-i18n-aria="menuAria" aria-label="打开清单">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <button type="button" class="top-bar__title" id="cp-title-btn" data-i18n-aria="cpTitleAria">CP Name</button>
+        <button type="button" class="top-bar__title" id="cp-title-btn" data-i18n-aria="cpTitleAria">我的 CP</button>
         <input type="text" class="top-bar__title-input" id="cp-title-input" hidden />
-        <button type="button" class="icon-btn" id="btn-more" aria-label="更多">
+        <button type="button" class="icon-btn" id="btn-more" data-i18n-aria="moreAria" aria-label="更多与排序">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" />
             <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
@@ -32,10 +32,10 @@
       </header>
 
       <div id="home-view">
-        <main class="feed" id="feed" aria-label="嗑点列表"></main>
+        <main class="feed" id="feed" data-i18n-aria="feedAria" aria-label="嗑点列表"></main>
       </div>
 
-      <nav class="bottom-nav" aria-label="主导航">
+      <nav class="bottom-nav" data-i18n-aria="navMainAria" aria-label="主导航">
         <button type="button" class="bottom-nav__item bottom-nav__item--active" id="btn-home">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" />
@@ -60,14 +60,14 @@
         </button>
       </nav>
 
-      <button type="button" class="fab" id="fab-open-editor" aria-label="新建">
+      <button type="button" class="fab" id="fab-open-editor" data-i18n-aria="fabAria" aria-label="新建">
         <svg class="icon fab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25">
           <path d="M12 5v14M5 12h14" />
         </svg>
       </button>
 
       <div class="overlay overlay--sort" id="sort-overlay" aria-hidden="true">
-        <button type="button" class="overlay__backdrop" id="sort-backdrop" aria-label="关闭"></button>
+        <button type="button" class="overlay__backdrop" id="sort-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></button>
         <div class="sort-modal" role="dialog" aria-modal="true" aria-labelledby="sort-modal-title">
           <h2 class="sort-modal__title" id="sort-modal-title" data-i18n="sortModalTitle">排序方式</h2>
           <div class="sort-modal__list">
@@ -87,7 +87,7 @@
       <!-- Search Page Overlay -->
       <div class="page-overlay page-overlay--search" id="search-overlay" hidden aria-hidden="true">
         <header class="page-header">
-          <button type="button" class="page-header__close" id="btn-close-search" aria-label="关闭搜索">
+          <button type="button" class="page-header__close" id="btn-close-search" data-i18n-aria="searchCloseAria" aria-label="关闭搜索">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
@@ -102,6 +102,7 @@
               type="text"
               class="search-input"
               id="search-input"
+              data-i18n-placeholder="searchPlaceholder"
               placeholder="可以同时搜索多个tag，例如 ##同事####劲敌##"
               autocomplete="off"
             />
@@ -120,12 +121,12 @@
 
         <!-- Tag Detail Slide-Up -->
         <div class="tag-detail-overlay" id="tag-detail-overlay" hidden aria-hidden="true">
-          <button type="button" class="tag-detail-backdrop" id="tag-detail-backdrop" aria-label="关闭"></button>
+          <button type="button" class="tag-detail-backdrop" id="tag-detail-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></button>
 
           <div class="tag-detail-sheet" id="tag-detail-sheet" role="dialog" aria-modal="true">
             <div class="tag-detail-header">
               <h2 class="tag-detail-title" id="tag-detail-title">#tag</h2>
-              <button type="button" class="btn-primary tag-detail-done" id="tag-detail-done">完成</button>
+              <button type="button" class="btn-primary tag-detail-done" id="tag-detail-done" data-i18n="tagDone">完成</button>
             </div>
             <div class="tag-detail-body" id="tag-detail-list"></div>
           </div>
@@ -137,7 +138,7 @@
         <header class="page-header">
           <div class="page-header__left-spacer"></div>
           <h1 class="page-header__title" id="folder-list-page-title">清单</h1>
-          <button type="button" class="page-header__text-btn" id="btn-close-folderList">
+          <button type="button" class="page-header__text-btn" id="btn-close-folderList" data-i18n="cancel">
             取消
           </button>
         </header>
@@ -145,7 +146,7 @@
           <div id="folders-list" class="folders-list"></div>
           <button type="button" class="folder-create" id="btn-create-folder">
             <span class="folder-create__icon" aria-hidden="true">+</span>
-            新建清单
+            <span data-i18n="newFolderBtn">新建清单</span>
           </button>
         </main>
       </div>
@@ -165,7 +166,7 @@
           </div>
         </header>
         <header class="page-header folder-detail-header-export" id="folder-header-export" aria-hidden="true">
-          <button type="button" class="page-header__close" id="folder-export-exit">
+          <button type="button" class="page-header__close" id="folder-export-exit" data-i18n-aria="closeOverlay" aria-label="关闭">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
@@ -180,11 +181,12 @@
               <h2 class="folder-export-heading" id="folder-export-heading" hidden></h2>
               <p class="folder-export-annotation" id="folder-export-annotation" hidden></p>
               <div class="folder-detail-topnote">
-                <label class="folder-note-label" for="folder-annotation">🌸 我还有想说的：</label>
+                <label class="folder-note-label" id="folder-note-label" for="folder-annotation" data-i18n="folderNoteLabel">🌸 我还有想说的：</label>
                 <textarea
                   id="folder-annotation"
                   class="folder-note-input"
-                  placeholder="写点什么…"
+                  data-i18n-placeholder="folderNotePlaceholder"
+                  placeholder="随手记一句给未来的自己…"
                   rows="2"
                 ></textarea>
               </div>
@@ -196,8 +198,8 @@
           🌸
         </button>
         <div class="folder-emoji-sheet" id="folder-emoji-sheet" hidden aria-hidden="true">
-          <button type="button" class="folder-emoji-sheet__backdrop" id="folder-emoji-sheet-backdrop" aria-label="关闭"></button>
-          <div class="folder-emoji-sheet__panel" role="dialog" aria-label="选择背景图案">
+          <button type="button" class="folder-emoji-sheet__backdrop" id="folder-emoji-sheet-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></button>
+          <div class="folder-emoji-sheet__panel" role="dialog" data-i18n-aria="folderEmojiPickAria" aria-label="选择背景图案">
             <div class="folder-emoji-grid" id="folder-emoji-grid">
               <button type="button" class="folder-emoji-cell" data-emoji="💗">💗</button>
               <button type="button" class="folder-emoji-cell" data-emoji="✨">✨</button>
@@ -216,7 +218,7 @@
 
       <!-- 选择清单（箭头添加） -->
       <div class="overlay overlay--settings" id="folder-picker-overlay" aria-hidden="true">
-        <button type="button" class="overlay__backdrop" id="folder-picker-backdrop" aria-label="关闭"></button>
+        <button type="button" class="overlay__backdrop" id="folder-picker-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></button>
         <div class="sheet sheet--settings folder-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="folder-picker-heading">
           <div class="sheet__title-row">
             <h2 class="sheet__title" id="folder-picker-heading">添加到清单</h2>
@@ -230,7 +232,7 @@
 
       <!-- 编辑抽屉 -->
       <div class="overlay" id="editor-overlay" aria-hidden="true">
-        <button type="button" class="overlay__backdrop" id="editor-backdrop" aria-label="关闭"></button>
+        <button type="button" class="overlay__backdrop" id="editor-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></button>
         <div class="sheet sheet--editor tpl-图文" id="editor-panel" role="dialog" aria-modal="true" aria-labelledby="editor-heading">
           <div class="sheet__header">
             <span id="editor-heading" class="visually-hidden">编辑嗑点</span>
@@ -300,8 +302,8 @@
                 </span>
               </button>
               <div class="image-type-panel" id="image-type-panel" hidden>
-                <button type="button" class="image-type-btn" data-image-type="full">全屏</button>
-                <button type="button" class="image-type-btn" data-image-type="subtitle">字幕</button>
+                <button type="button" class="image-type-btn" data-image-type="full" data-i18n="imageTypeFull">全屏</button>
+                <button type="button" class="image-type-btn" data-image-type="subtitle" data-i18n="imageTypeSubtitle">字幕</button>
               </div>
               <div class="editor-image-slots" id="editor-image-slots" hidden></div>
             </div>
@@ -341,7 +343,7 @@
 
       <!-- CP 角色管理 -->
       <div class="overlay overlay--settings" id="cp-roster-overlay" aria-hidden="true">
-        <button type="button" class="overlay__backdrop" id="cp-roster-backdrop" aria-label="关闭"></button>
+        <button type="button" class="overlay__backdrop" id="cp-roster-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></button>
         <div class="sheet sheet--settings sheet--cp-roster" id="cp-roster-panel" role="dialog" aria-modal="true" aria-labelledby="cp-roster-heading">
           <div class="sheet__title-row">
             <h2 class="sheet__title" id="cp-roster-heading" data-i18n="cpRosterTitle">CP / 角色</h2>
@@ -353,14 +355,14 @@
 
       <!-- 设置抽屉 -->
       <div class="overlay overlay--settings" id="settings-overlay" aria-hidden="true">
-        <button type="button" class="overlay__backdrop" id="settings-backdrop" aria-label="关闭"></button>
+        <button type="button" class="overlay__backdrop" id="settings-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></button>
         <div class="sheet sheet--settings" id="settings-panel" role="dialog" aria-modal="true">
           <div class="sheet__title-row">
             <h2 class="sheet__title" data-i18n="settingsTitle">设置</h2>
           </div>
           <div class="settings-body">
             <p class="settings-label" data-i18n="language">语言</p>
-            <div class="lang-toggle" role="group" aria-label="语言">
+            <div class="lang-toggle" role="group" data-i18n-aria="langGroupAria" aria-label="界面语言">
               <button type="button" class="lang-toggle__btn is-active" data-locale="zh" data-i18n="langZh">
                 中文
               </button>
@@ -372,7 +374,7 @@
 
       <!-- 模版选择（与 src2 一致） -->
       <div class="overlay overlay--settings" id="template-overlay" aria-hidden="true">
-        <button type="button" class="overlay__backdrop" id="template-backdrop" aria-label="关闭"></button>
+        <button type="button" class="overlay__backdrop" id="template-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></button>
         <div class="sheet sheet--settings" role="dialog" aria-modal="true" aria-labelledby="template-heading">
           <div class="sheet__title-row">
             <h2 class="sheet__title" id="template-heading" data-i18n="templateTitle">模版样式</h2>
@@ -395,9 +397,38 @@
       </div>
     </div>
 
+    <!-- 新用户引导（上半中文 / 下半英文，每次打开都会出现） -->
+    <div class="overlay overlay--sort overlay--onboarding" id="onboarding-overlay" aria-hidden="true">
+      <button type="button" class="overlay__backdrop" id="onboarding-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></button>
+      <div class="sort-modal onboarding-modal" role="dialog" aria-modal="true" aria-labelledby="onboarding-zh-lead">
+        <div class="onboarding-modal__pane onboarding-modal__pane--zh" lang="zh-CN">
+          <p class="onboarding-modal__lead" id="onboarding-zh-lead">泥嚎，新来的同人女 👋🌸</p>
+          <p class="onboarding-modal__p">先在顶部设置你的 CP 和角色</p>
+          <p class="onboarding-modal__p">创建嗑点卡片，随手打 #标签# 记录情绪或人物</p>
+          <p class="onboarding-modal__p">去「搜索」翻旧糖，把好嗑的收进清单</p>
+          <p class="onboarding-modal__p">清单可以导出 PDF，用来投喂亲友：请吃家产！</p>
+          <p class="onboarding-modal__warn">⚠️ 当前为 demo 模式，数据不会长期保存，请勿刷新页面</p>
+        </div>
+        <div class="onboarding-modal__divider" aria-hidden="true"></div>
+        <div class="onboarding-modal__pane onboarding-modal__pane--en" lang="en">
+          <p class="onboarding-modal__lead">Hi! Welcome 👋</p>
+          <p class="onboarding-modal__p">Set your ship and characters from the <strong>top</strong> (tap the CP name).</p>
+          <p class="onboarding-modal__p">Create cards and use <strong>#tags#</strong> for feelings or characters.</p>
+          <p class="onboarding-modal__p">Open <strong>Search</strong> to find old tags and add moments to <strong>lists</strong>.</p>
+          <p class="onboarding-modal__p">Lists can export as <strong>PDF</strong> to share with friends.</p>
+          <p class="onboarding-modal__warn">⚠️ Demo: your data may be lost if you refresh. Don’t refresh if you want to keep it.</p>
+          <p class="onboarding-modal__p onboarding-modal__p--langtip">
+            <strong>Language:</strong> tap <strong>Settings</strong> (bottom tab) → choose <strong>中文</strong> or <strong>English</strong>. You can
+            also follow your phone or computer system language.
+          </p>
+        </div>
+        <button type="button" class="btn-primary onboarding-modal__cta" id="onboarding-cta" data-i18n="onboardCta">知道了</button>
+      </div>
+    </div>
+
     <!-- Delete confirmation modal -->
     <div class="overlay overlay--sort" id="delete-confirm-overlay" aria-hidden="true">
-      <div class="overlay__backdrop delete-confirm-backdrop"></div>
+      <div class="overlay__backdrop delete-confirm-backdrop" data-i18n-aria="closeOverlay" aria-label="关闭"></div>
       <div class="sort-modal delete-confirm-modal" role="alertdialog" aria-modal="true">
         <p class="delete-confirm-msg sort-modal__title"></p>
         <div class="sort-modal__list">

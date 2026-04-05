@@ -43,7 +43,22 @@
       pickFolder: '添加到清单',
       momentsCount: '{n} 个嗑点',
       newFolderName: '新清单',
-      cpDefault: 'CP Name',
+      cpDefault: '我的 CP',
+      appTitle: '嗑点',
+      menuAria: '打开清单',
+      moreAria: '更多与排序',
+      navMainAria: '主导航',
+      feedAria: '嗑点列表',
+      searchCloseAria: '关闭搜索',
+      langGroupAria: '界面语言',
+      folderNoteLabel: '🌸 我还有想说的：',
+      folderNotePlaceholder: '随手记一句给未来的自己…',
+      folderEmojiPickAria: '选择背景图案',
+      imageTypeFull: '全屏',
+      imageTypeSubtitle: '字幕',
+      demoCardHint: '示范 · 随手可删',
+      rosterSecFriends: '朋友',
+      rosterSecOthers: '其他',
       delete: '删除',
       folderExport: '导出',
       folderShare: '分享',
@@ -75,6 +90,7 @@
       rosterGroupCpPh: '栏目标题，如填写 CP 名称',
       rosterGroupFriendsPh: '栏目标题，如：朋友',
       rosterGroupOthersPh: '栏目标题，如：其他',
+      onboardCta: '知道了',
     },
     en: {
       home: 'Home',
@@ -106,16 +122,31 @@
       langEn: 'English',
       templateTitle: 'Template',
       tpl1n: 'Image + text',
-      tpl1m: 'Anime / film / TV',
+      tpl1m: 'Anime, TV, or film canon',
       tpl2n: 'Text',
-      tpl2m: 'Novels',
+      tpl2m: 'Novels & long fic',
       tpl3n: 'Image',
-      tpl3m: 'Comics',
+      tpl3m: 'Comics & panels',
       tagDone: 'Done',
       pickFolder: 'Add to list',
       momentsCount: '{n} moments',
       newFolderName: 'List',
-      cpDefault: 'CP Name',
+      cpDefault: 'My ship',
+      appTitle: 'Kēdiǎn',
+      menuAria: 'Open lists',
+      moreAria: 'More and sort',
+      navMainAria: 'Main navigation',
+      feedAria: 'Moments feed',
+      searchCloseAria: 'Close search',
+      langGroupAria: 'Interface language',
+      folderNoteLabel: '🌸 Anything else to add:',
+      folderNotePlaceholder: 'Leave a note for future you…',
+      folderEmojiPickAria: 'Pick a background pattern',
+      imageTypeFull: 'Full bleed',
+      imageTypeSubtitle: 'Subtitles',
+      demoCardHint: 'Demo · delete anytime',
+      rosterSecFriends: 'Friends',
+      rosterSecOthers: 'Others',
       delete: 'Delete',
       folderExport: 'Export',
       folderShare: 'Share',
@@ -142,46 +173,89 @@
       rosterGroupCpPh: 'Section title, e.g. CP name',
       rosterGroupFriendsPh: 'Section title, e.g. Friends',
       rosterGroupOthersPh: 'Section title, e.g. Others',
+      onboardCta: 'OK',
     },
   };
 
-  var SAMPLE_CARDS = [
-    {
-      id: 1,
-      image:
-        'https://images.unsplash.com/photo-1681757265572-020257b75511?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-      quote: '最后发送出去会是什么样子的我会成功吗',
-      tags: ['心动', '甜蜜', '日常'],
-    },
-    {
-      id: 2,
-      image:
-        'https://images.unsplash.com/photo-1696697812492-7f93a1ad4d86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-      quote: '他的眼神让我整个人都融化了，这是什么神仙moment！',
-      tags: ['眼神杀', '心动时刻'],
-    },
-    {
-      id: 3,
-      image:
-        'https://images.unsplash.com/photo-1612180134806-ff3cfd50cc45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-      quote: '两个人的默契真的绝了，不愧是我的本命CP',
-      tags: ['默契', '双向奔赴', '甜'],
-    },
-    {
-      id: 4,
-      image:
-        'https://images.unsplash.com/photo-1732644144489-b1974816d3c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-      quote: '这个拥抱我可以反复看一百遍都不够，太甜了太甜了！',
-      tags: ['拥抱', '甜', '名场面'],
-    },
-    {
-      id: 5,
-      image:
-        'https://images.unsplash.com/photo-1763866517746-d78f1609c723?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-      quote: '你知道吗，从那一刻起我就知道，你就是我要找的那个人',
-      tags: ['告白', '心动', '刀'],
-    },
+  var DEMO_CARD_IMAGES = [
+    'https://images.unsplash.com/photo-1681757265572-020257b75511?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    'https://images.unsplash.com/photo-1696697812492-7f93a1ad4d86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    'https://images.unsplash.com/photo-1612180134806-ff3cfd50cc45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    'https://images.unsplash.com/photo-1732644144489-b1974816d3c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    'https://images.unsplash.com/photo-1763866517746-d78f1609c723?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
   ];
+
+  var DEMO_CARD_LANG = {
+    zh: [
+      {
+        quote: '指尖悬在发送键上好久了……他会不会已读不回啊。',
+        tags: ['试探', '心动', '聊天框文学'],
+      },
+      {
+        quote: '这个对视我直接没了，这是什么神仙镜头。',
+        tags: ['眼神戏', '名场面', '嗑到了'],
+      },
+      {
+        quote: '这默契没谁了，我产品是真的。',
+        tags: ['默契', '双向奔赴', '稳稳的幸福'],
+      },
+      {
+        quote: '这个拥抱我能盘一百遍，胰岛素预警。',
+        tags: ['拥抱', '高糖', '反复观看'],
+      },
+      {
+        quote: '从那一刻起我就知道——完了，栽了。',
+        tags: ['告白', '心动', '刀子糖'],
+      },
+    ],
+    en: [
+      {
+        quote: "My thumb's been hovering over Send for ages. Left on read? Please no.",
+        tags: ['angst', 'texting', 'soft'],
+      },
+      {
+        quote: 'That look melted me. Who allowed this cinematography.',
+        tags: ['eye contact', 'iconic', 'feral'],
+      },
+      {
+        quote: 'The sync between them? Canon. My ship is so real.',
+        tags: ['found family', 'slow burn', 'fluff'],
+      },
+      {
+        quote: 'This hug belongs in a museum. Loop #100 and counting.',
+        tags: ['hug', 'tooth-rotting', 'rewatch'],
+      },
+      {
+        quote: 'From that second I knew—I was gone.',
+        tags: ['confession', 'hurt/comfort', 'angst'],
+      },
+    ],
+  };
+
+  var DEMO_FOLDER_NAMES = {
+    zh: {
+      a: '新文·生长痛素材',
+      b: 'HP paro 口嗨',
+      c: '快穿 paro 脑洞',
+    },
+    en: {
+      a: 'Hurt/comfort WIP',
+      b: 'HP AU scrapbook',
+      c: 'Quick-transmigration AU',
+    },
+  };
+
+  var LEGACY_FOLDER_TO_SLOT = {
+    '新文-生长痛用到的': 'a',
+    '新文·生长痛素材': 'a',
+    'Hurt/comfort WIP': 'a',
+    'HP Paro': 'b',
+    'HP paro 口嗨': 'b',
+    'HP AU scrapbook': 'b',
+    '快穿 Paro': 'c',
+    '快穿 paro 脑洞': 'c',
+    'Quick-transmigration AU': 'c',
+  };
 
   var PLACEHOLDER_IMAGES = [
     'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400',
@@ -208,15 +282,11 @@
 
   var state = {
     currentLang: 'zh',
-    cpName: 'CP Name',
+    cpName: '我的 CP',
     cpRoster: defaultCpRoster(),
     editingName: false,
-    cards: SAMPLE_CARDS.slice(),
-    folders: [
-      { id: 1, name: '新文-生长痛用到的', cardIds: [1, 2], annotation: '' },
-      { id: 2, name: 'HP Paro', cardIds: [3, 4, 5], annotation: '' },
-      { id: 3, name: '快穿 Paro', cardIds: [1, 3, 4], annotation: '' },
-    ],
+    cards: [],
+    folders: [],
     searchQuery: '',
     selectedTagForDetail: null,
     selectedFolderId: null,
@@ -275,7 +345,7 @@
     var si = $('search-input');
     if (si) si.placeholder = t('searchPlaceholder');
     var fa = $('folder-annotation');
-    if (fa) fa.placeholder = t('annotationPh');
+    if (fa) fa.placeholder = t('folderNotePlaceholder');
     var tpls = [
       ['tpl1n', 'tpl1m'],
       ['tpl2n', 'tpl2m'],
@@ -297,25 +367,27 @@
     if (fd) fd.textContent = t('folderDone');
     var td = $('tag-detail-done');
     if (td) td.textContent = t('tagDone');
-    var nf = $('btn-create-folder');
-    if (nf) {
-      for (var j = nf.childNodes.length - 1; j >= 0; j--) {
-        if (nf.childNodes[j].nodeType === 3) {
-          nf.childNodes[j].textContent = ' ' + t('newFolderBtn');
-          break;
-        }
-      }
-    }
+    document.title = t('appTitle');
     var fab = $('fab-open-editor');
     if (fab) fab.setAttribute('aria-label', t('fabAria'));
     var sb = $('sort-backdrop');
     if (sb) sb.setAttribute('aria-label', t('closeOverlay'));
-    var fx = $('folder-export-exit');
-    if (fx) fx.setAttribute('aria-label', t('closeOverlay'));
     var feb = $('folder-export-emoji-fab');
     if (feb) feb.setAttribute('aria-label', t('folderEmojiBg'));
     var febd = $('folder-emoji-sheet-backdrop');
     if (febd) febd.setAttribute('aria-label', t('closeOverlay'));
+    var fex = $('folder-export-exit');
+    if (fex) fex.setAttribute('aria-label', t('closeOverlay'));
+    var bmenu = $('btn-menu');
+    if (bmenu) bmenu.setAttribute('aria-label', t('menuAria'));
+    var bmore = $('btn-more');
+    if (bmore) bmore.setAttribute('aria-label', t('moreAria'));
+    var feedEl = $('feed');
+    if (feedEl) feedEl.setAttribute('aria-label', t('feedAria'));
+    var bnav = document.querySelector('.bottom-nav');
+    if (bnav) bnav.setAttribute('aria-label', t('navMainAria'));
+    var bsearchClose = $('btn-close-search');
+    if (bsearchClose) bsearchClose.setAttribute('aria-label', t('searchCloseAria'));
     applyEditorTemplateStrings();
   }
 
@@ -390,6 +462,101 @@
         })
       );
     } catch (e) {}
+  }
+
+  function hasStoredState() {
+    try {
+      return !!localStorage.getItem(STORAGE_KEY);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function buildDemoCardsList() {
+    var lang = state.currentLang === 'en' ? 'en' : 'zh';
+    var rows = DEMO_CARD_LANG[lang] || DEMO_CARD_LANG.zh;
+    var cards = [];
+    for (var i = 0; i < 5; i++) {
+      var row = rows[i];
+      cards.push({
+        id: i + 1,
+        image: DEMO_CARD_IMAGES[i],
+        quote: row.quote,
+        tags: row.tags.slice(),
+        template: '图文',
+        isDemo: true,
+        quoteFromIds: [],
+      });
+    }
+    return cards;
+  }
+
+  function buildDemoFoldersList() {
+    var lang = state.currentLang === 'en' ? 'en' : 'zh';
+    var fn = DEMO_FOLDER_NAMES[lang] || DEMO_FOLDER_NAMES.zh;
+    return [
+      { id: 1, name: fn.a, cardIds: [1, 2], annotation: '', isDemo: true, demoSlot: 'a' },
+      { id: 2, name: fn.b, cardIds: [3, 4, 5], annotation: '', isDemo: true, demoSlot: 'b' },
+      { id: 3, name: fn.c, cardIds: [1, 3, 4], annotation: '', isDemo: true, demoSlot: 'c' },
+    ];
+  }
+
+  function buildDemoCpRoster() {
+    var name = t('cpDefault');
+    return {
+      groups: [
+        {
+          key: 'pair',
+          title: name,
+          items: [
+            { id: 1, name: t('charA'), emoji: '', color: '#BFDBFE' },
+            { id: 2, name: t('charB'), emoji: '', color: '#FBCFE8' },
+          ],
+        },
+        { key: 'friends', title: t('rosterSecFriends'), items: [] },
+        { key: 'others', title: t('rosterSecOthers'), items: [] },
+      ],
+    };
+  }
+
+  function seedFirstVisitState() {
+    state.cards = buildDemoCardsList();
+    state.folders = buildDemoFoldersList();
+    state.cpName = t('cpDefault');
+    state.cpRoster = buildDemoCpRoster();
+  }
+
+  function migrateLegacyDemoMarkers() {
+    state.cards.forEach(function (c) {
+      if (c.isDemo) return;
+      if (DEMO_CARD_IMAGES.indexOf(c.image) !== -1) c.isDemo = true;
+    });
+    state.folders.forEach(function (f) {
+      if (f.isDemo) return;
+      var slot = LEGACY_FOLDER_TO_SLOT[f.name];
+      if (slot) {
+        f.isDemo = true;
+        f.demoSlot = slot;
+      }
+    });
+  }
+
+  function syncDemoContentToCurrentLang() {
+    var lang = state.currentLang === 'en' ? 'en' : 'zh';
+    var rows = DEMO_CARD_LANG[lang] || DEMO_CARD_LANG.zh;
+    state.cards.forEach(function (c) {
+      if (!c.isDemo || c.id < 1 || c.id > 5) return;
+      var row = rows[c.id - 1];
+      if (!row) return;
+      c.quote = row.quote;
+      c.tags = row.tags.slice();
+    });
+    var fn = DEMO_FOLDER_NAMES[lang] || DEMO_FOLDER_NAMES.zh;
+    state.folders.forEach(function (f) {
+      if (!f.isDemo || !f.demoSlot) return;
+      var nm = fn[f.demoSlot];
+      if (nm) f.name = nm;
+    });
   }
 
   function escapeHtml(s) {
@@ -491,8 +658,9 @@
         tagSet[t] = true;
       });
     });
+    var loc = state.currentLang === 'zh' ? 'zh-CN' : 'en';
     return Object.keys(tagSet).sort(function (a, b) {
-      return a.localeCompare(b, 'zh-CN');
+      return a.localeCompare(b, loc);
     });
   }
 
@@ -758,6 +926,13 @@
 
   function wrapFeedCardHtml(card, arrowBtn) {
     var inner = cardShellTall(card, arrowBtn, '');
+    var demoBadge = '';
+    if (card.isDemo) {
+      demoBadge =
+        '<div class="feed-card-demo-badge"><span class="feed-card-demo-badge__text">' +
+        escapeHtml(t('demoCardHint')) +
+        '</span></div>';
+    }
     var story = '';
     if (state.feedSortStory) {
       var ep = (card.episode || '').trim();
@@ -774,7 +949,7 @@
           '</div>';
       }
     }
-    return '<div class="feed-card-wrap">' + inner + story + '</div>';
+    return '<div class="feed-card-wrap">' + demoBadge + inner + story + '</div>';
   }
 
   function setSortModalOpen(open) {
@@ -2121,11 +2296,13 @@
         document.querySelectorAll('.lang-toggle__btn').forEach(function (b) {
           b.classList.toggle('is-active', b.getAttribute('data-locale') === loc);
         });
+        syncDemoContentToCurrentLang();
         applyUiStrings();
         document.documentElement.lang = state.currentLang === 'zh' ? 'zh-CN' : 'en';
         renderFolderList();
         renderSearchResults();
         renderFeed();
+        renderTagIndex();
         syncTemplateLabel();
         if ($('folder-picker-heading')) $('folder-picker-heading').textContent = t('pickFolder');
         if (dom.folderPickerOverlay && dom.folderPickerOverlay.classList.contains('is-open')) renderFolderPicker();
@@ -2135,9 +2312,30 @@
         if (dom.cpRosterOverlay && dom.cpRosterOverlay.classList.contains('is-open')) {
           renderCpRosterEditor();
         }
+        if (state.selectedTagForDetail) renderTagDetail();
+        if (state.selectedFolderId != null) renderFolderDetail();
         saveState();
       });
     });
+  }
+
+  var onboardingBound = false;
+  function bindOnboarding() {
+    if (onboardingBound) return;
+    onboardingBound = true;
+    function dismissOnboarding() {
+      if (!dom.onboardingOverlay) return;
+      dom.onboardingOverlay.classList.remove('is-open');
+      dom.onboardingOverlay.setAttribute('aria-hidden', 'true');
+    }
+    if (dom.onboardingCta) dom.onboardingCta.addEventListener('click', dismissOnboarding);
+    if (dom.onboardingBackdrop) dom.onboardingBackdrop.addEventListener('click', dismissOnboarding);
+  }
+
+  function showOnboardingOnLaunch() {
+    if (!dom.onboardingOverlay) return;
+    dom.onboardingOverlay.classList.add('is-open');
+    dom.onboardingOverlay.setAttribute('aria-hidden', 'false');
   }
 
   function bindNav() {
@@ -2594,12 +2792,21 @@
     dom.cpRosterOverlay = $('cp-roster-overlay');
     dom.cpRosterBody = $('cp-roster-body');
     dom.editorQuoteFromWrap = $('editor-quote-from-wrap');
+    dom.onboardingOverlay = $('onboarding-overlay');
+    dom.onboardingBackdrop = $('onboarding-backdrop');
+    dom.onboardingCta = $('onboarding-cta');
   }
 
   function init() {
     loadState();
     ensureCpRosterShape();
     migrateCardsQuoteFrom();
+    if (!hasStoredState()) {
+      seedFirstVisitState();
+    } else {
+      migrateLegacyDemoMarkers();
+    }
+    syncDemoContentToCurrentLang();
     cacheDom();
     document.documentElement.lang = state.currentLang === 'zh' ? 'zh-CN' : 'en';
     if (dom.cpTitleBtn) dom.cpTitleBtn.textContent = state.cpName;
@@ -2611,6 +2818,7 @@
     bindCpTitle();
     bindCpRosterBody();
     bindLangToggle();
+    bindOnboarding();
     bindNav();
     bindOverlays();
     bindSearch();
@@ -2625,6 +2833,9 @@
     renderTagIndex();
     syncEditor();
     resizeEditorTextarea();
+    requestAnimationFrame(function () {
+      requestAnimationFrame(showOnboardingOnLaunch);
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
