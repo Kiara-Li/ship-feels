@@ -169,6 +169,11 @@
       routePh: 'Route',
       endingPh: 'Ending name',
       quoteParagraphPh: 'Paragraph (shown as the card cover on home)',
+      sortModalTitle: 'Sort by',
+      sortRealTime: 'Edit time',
+      sortStory: 'Story timeline',
+      sortCustom: 'Custom',
+      closeOverlay: 'Close',
       folderEmojiBg: 'Background pattern',
       deleteConfirmMsg: 'Delete this moment?',
       deleteConfirmOk: 'Delete',
@@ -190,6 +195,14 @@
   };
 
   var DEMO_CARD_IMAGES = [
+    'tempo/pridehed-1-ae3d7bc9b7a9a55cb3ea5b99c8cba69b.webp',
+    'tempo/rexfeatures_422879fnews-6798285.jpg',
+    'tempo/shutterstock-editorial-8511801h.jpg',
+    'tempo/pridehed-1-ae3d7bc9b7a9a55cb3ea5b99c8cba69b.webp',
+    'tempo/rexfeatures_422879fnews-6798285.jpg',
+  ];
+
+  var LEGACY_DEMO_UNSPLASH_IMAGES = [
     'https://images.unsplash.com/photo-1681757265572-020257b75511?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
     'https://images.unsplash.com/photo-1696697812492-7f93a1ad4d86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
     'https://images.unsplash.com/photo-1612180134806-ff3cfd50cc45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
@@ -276,25 +289,26 @@
   ];
 
   function defaultCpRoster() {
+    var L = TEXT.en;
     return {
       groups: [
         {
           key: 'pair',
-          title: '主角',
+          title: L.cpDefault,
           items: [
-            { id: 1, name: '角色A', emoji: '', color: '#BFDBFE' },
-            { id: 2, name: '角色B', emoji: '', color: '#FBCFE8' },
+            { id: 1, name: L.charA, emoji: '', color: '#BFDBFE' },
+            { id: 2, name: L.charB, emoji: '', color: '#FBCFE8' },
           ],
         },
-        { key: 'friends', title: '朋友', items: [] },
-        { key: 'others', title: '其他', items: [] },
+        { key: 'friends', title: L.rosterSecFriends, items: [] },
+        { key: 'others', title: L.rosterSecOthers, items: [] },
       ],
     };
   }
 
   var state = {
-    currentLang: 'zh',
-    cpName: '我的 CP',
+    currentLang: 'en',
+    cpName: 'My ship',
     cpRoster: defaultCpRoster(),
     editingName: false,
     cards: [],
@@ -552,7 +566,11 @@
   function migrateLegacyDemoMarkers() {
     state.cards.forEach(function (c) {
       if (c.isDemo) return;
-      if (DEMO_CARD_IMAGES.indexOf(c.image) !== -1) c.isDemo = true;
+      if (
+        DEMO_CARD_IMAGES.indexOf(c.image) !== -1 ||
+        LEGACY_DEMO_UNSPLASH_IMAGES.indexOf(c.image) !== -1
+      )
+        c.isDemo = true;
     });
     state.folders.forEach(function (f) {
       if (f.isDemo) return;
